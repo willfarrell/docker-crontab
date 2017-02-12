@@ -1,0 +1,13 @@
+version: "2.1"
+
+services:
+  myapp:
+    image: alpine:3.5
+    restart: always
+    command: "sh -c 'while :; do sleep 1; done'"
+
+  crontab:
+    build: .
+    restart: always
+    volumes:
+     - "/var/run/docker.sock:/var/run/docker.sock"

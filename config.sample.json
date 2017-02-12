@@ -1,0 +1,32 @@
+[{
+	"comment":"cron with triggered commands",
+	"schedule":"* * * * *",
+	"command":"echo hello",
+	"project":"crontab",
+	"container":"myapp",
+	"trigger":[{
+		"command":"echo world",
+		"container":"crontab_myapp_1"
+	}]
+},{
+	"comment":"map a volume",
+	"schedule":"* * * * *",
+	"dockerargs":"-d -v /tmp:/tmp",
+	"command":"echo new",
+	"image":"alpine:3.5"
+},{
+	"comment":"use an ENV from inside a container",
+	"schedule":"@hourly",
+	"dockerargs":"-d -e FOO=BAR",
+	"command":"sh -c 'echo hourly ${FOO}'",
+	"image":"alpine:3.5"
+},{
+	"comment":"trigger every 2 min",
+	"schedule":"@every 2m",
+	"command":"echo 2 minute",
+	"image":"alpine:3.5",
+	"trigger":[{
+		"command":"echo world",
+		"container":"crontab_myapp_1"
+	}]
+}]

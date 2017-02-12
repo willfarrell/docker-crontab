@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+set -e
+
+# for local testing only
+#HOME_DIR=.
+
+CONFIG=${HOME_DIR}/config.json
+DOCKER_SOCK=/var/run/docker.sock
+CRONTAB_FILE=${HOME_DIR}/docker
+
+make_image_cmd() {
+    DOCKERARGS=$(echo ${TMP_JSON} | jq -r .dockerargs)
+    if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
+    IMAGE=$(echo ${TMP_JSON} | jq -r .image)
+    TMP_COMMAND=$(echo ${TMP_JSON} | jq -r .command)
+    echo "docker run ${DOCKERARGS} ${IMAGE} ${TMP_COMMAND}"
+}
+
+make_container_cmd() {
+    DOCKERARGS=$(echo ${TMP_JSON} | jq -r .dockerargs)
+    if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
+    PROJECT=$(echo ${TMP_JSON} | jq -r .project)
+    CONTAINER=$(echo ${TMP_JSON} | jq -r .container)
+    TMP_COMMAND=$(echo ${TMP_JSON} | jq -r .command)
+
+    COMMAND_ARR=()
+
+    if [ "${PROJECT}" != "null" ]; then
+
+        # create bash script to detect all running containers
+        SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
+cat << EOF > ${HOME_DIR}/${SCRIPT_NAME}
+!#/bin/bash
+set -e
+
+CONTAINERS=\$(curl --no-buffer -s -XGET --unix-socket ${DOCKER_SOCK} http://localhost/containers/json | jq -r .[].Names[0] | sed 's@/@@')"
+for CONTAINER_NAME in \$CONTAINERS; do
+    if [[ "\${CONTAINER_NAME}" =~ ^${PROJECT}_${CONTAINER}.+ ]]; then
+        docker exec ${DOCKERARGS} \${CONTAINER_NAME} ${TMP_COMMAND}
+    fi
+done
+EOF
+        echo "sh ${HOME_DIR}/${SCRIPT_NAME}"
+    else
+        echo "docker exec ${DOCKERARGS} ${CONTAINER} ${TMP_COMMAND}"
+    fi
+}
+
+make_cmd() {
+    IMAGE=$(echo ${TMP_JSON} | jq -r .image)
+    CONTAINER=$(echo ${TMP_JSON} | jq -r .container)
+    if [ "${IMAGE}" != "null" ]; then
+        make_image_cmd
+    elif [ "${CONTAINER}" != "null" ]; then
+        make_container_cmd
+    else
+        echo "echo 'Error making docker command, image or container param missing.'"
+    fi
+}
+
+parse_schedule() {
+	case $1 in
+        "@yearly")
+            echo "0 0 0 1 1 *"
+            ;;
+        "@annually")
+            echo "0 0 0 1 1 *"
+            ;;
+        "@monthly")
+            echo "0 0 0 1 * *"
+            ;;
+        "@weekly")
+            echo "0 0 0 * * 0"
+            ;;
+        "@daily")
+            echo "0 0 0 * * *"
+            ;;
+        "@midnight")
+            echo "0 0 0 * * *"
+            ;;
+        "@hourly")
+            echo "0 0 * * * *"
+            ;;
+        "@every")
+            TIME=$2
+            TOTAL=0
+
+            M=$(echo $TIME | grep -o '[0-9]\+m')
+            H=$(echo $TIME | grep -o '[0-9]\+h')
+            D=$(echo $TIME | grep -o '[0-9]\+d')
+
+            if [ -n "${M}" ]; then
+                TOTAL=$(($TOTAL + ${M::-1}))
+            fi
+            if [ -n "${H}" ]; then
+                TOTAL=$(($TOTAL + ${H::-1} * 60))
+            fi
+            if [ -n "${D}" ]; then
+                TOTAL=$(($TOTAL + ${D::-1} * 60 * 24))
+            fi
+
+            echo "*/${TOTAL} * * * * *"
+            ;;
+        *)
+            echo "${@}"
+            ;;
+    esac
+}
+
+function build_crontab() {
+    rm -rf ${CRONTAB_FILE}
+    while read i ; do
+        #echo "parse $(jq .[$i] ${CONFIG})"
+
+        SCHEDULE=$(jq -r .[$i].schedule ${CONFIG} | sed 's/\*/\\*/g')
+        if [ "${SCHEDULE}" == "null" ]; then
+            echo "Schedule Missing: $(jq -r .[$i].schedule ${CONFIG})"
+            continue
+        fi
+        SCHEDULE=$(parse_schedule ${SCHEDULE} | sed 's/\\//g')
+
+        if [ "$(jq -r .[$i].command ${CONFIG})" == "null" ]; then
+            echo "Command Missing: $(jq -r .[$i].command ${CONFIG})"
+            continue
+        fi
+
+        TMP_JSON=$(jq -c .[$i] ${CONFIG})
+        COMMAND=$(make_cmd)
+        if [ "$(jq -r .[$i].trigger ${CONFIG})" != "null" ]; then
+            while read j ; do
+                echo "trigger parse $(jq .[$i].trigger[$j] ${CONFIG})"
+                if [ "$(jq .[$i].trigger[$j].command ${CONFIG})" == "null" ]; then
+                    echo "Command Missing: $(jq -r .[$i].trigger[$j].command ${CONFIG})"
+                    continue
+                fi
+                TMP_JSON=$(jq -c .[$i].trigger[$j] ${CONFIG})
+                COMMAND="$COMMAND && $(make_cmd)"
+            done < <(jq -r '.['$i'].trigger|keys[]' ${CONFIG})
+        fi
+
+        NAME=$(jq -r .[$i].name ${CONFIG})
+        COMMENT=$(jq -r .[$i].comment ${CONFIG})
+        if [ "${NAME}" != "null" ] && [ "${COMMENT}" != "null" ]; then
+            echo "# ${NAME}: ${COMMENT}" >> ${CRONTAB_FILE}
+        elif [ "${COMMENT}" != "null" ]; then
+            echo "# ${COMMENT}" >> ${CRONTAB_FILE}
+        fi
+
+        echo "${SCHEDULE} ${COMMAND}" >> ${CRONTAB_FILE}
+    done < <(jq -r '.|keys[]' ${CONFIG})
+
+    echo "crontab generation complete"
+    cat ${CRONTAB_FILE}
+}
+
+# Used to pass json to functions - total hack, I know
+TMP_JSON=
+
+if [ "$1" = "crond" ] && [ -f ${CONFIG} ]; then
+    build_crontab
+fi
+
+echo "$@"
+exec "$@"

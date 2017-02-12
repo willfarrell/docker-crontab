@@ -1,6 +1,6 @@
 # docker-crontab
 
-A simple wrapper over `docker` to all complex cron job to be run in other containers. All in <45MB.
+A simple wrapper over `docker` to all complex cron job to be run in other containers. All in ~4MB.
 
 ## Supported tags and Dockerfile links
 
@@ -66,6 +66,6 @@ CMD ["crond", "-f"]
 ## TODO
 - [ ] Make smaller by using busybox?
 - [ ] Have ability to auto regenerate crontab on file change
-- [ ] Run commands on host machine
+- [ ] Run commands on host machine (w/ --privileged?)
 - [ ] Write tests
 - [ ] Setup TravisCI

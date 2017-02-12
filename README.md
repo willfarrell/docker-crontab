@@ -1,6 +1,6 @@
 # docker-crontab
 
-A simple wrapper over `docker` to all complex cron job to be run in other containers.
+A simple wrapper over `docker` to all complex cron job to be run in other containers. All in <45MB.
 
 ## Supported tags and Dockerfile links
 
@@ -10,7 +10,7 @@ A simple wrapper over `docker` to all complex cron job to be run in other contai
 
 
 ## Why?
-Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia), it was the main inspiration for this project. 
+Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia) (280MB), it was the main inspiration for this project. 
 A great project, don't get me wrong. It was just missing certain key enterprise features I felt were required to support where docker is heading.
 
 ## Features
@@ -40,6 +40,8 @@ See `./config.sample.json` for examples.
 docer build -t crontab .
 docker run -d \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /usr/bin/docker:/usr/bin/docker \
+    -v /path/to/config/dir:/opt/crontab \
     crontab
 ```
 

@@ -9,19 +9,19 @@ DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=${HOME_DIR}/docker
 
 make_image_cmd() {
-    DOCKERARGS=$(echo ${TMP_JSON} | jq -r .dockerargs)
+    DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
-    IMAGE=$(echo ${TMP_JSON} | jq -r .image)
-    TMP_COMMAND=$(echo ${TMP_JSON} | jq -r .command)
+    IMAGE=$(echo ${1} | jq -r .image)
+    TMP_COMMAND=$(echo ${1} | jq -r .command)
     echo "docker run ${DOCKERARGS} ${IMAGE} ${TMP_COMMAND}"
 }
 
 make_container_cmd() {
-    DOCKERARGS=$(echo ${TMP_JSON} | jq -r .dockerargs)
+    DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
-    PROJECT=$(echo ${TMP_JSON} | jq -r .project)
-    CONTAINER=$(echo ${TMP_JSON} | jq -r .container)
-    TMP_COMMAND=$(echo ${TMP_JSON} | jq -r .command)
+    PROJECT=$(echo ${1} | jq -r .project)
+    CONTAINER=$(echo ${1} | jq -r .container)
+    TMP_COMMAND=$(echo ${1} | jq -r .command)
 
     COMMAND_ARR=()
 
@@ -47,8 +47,8 @@ EOF
 }
 
 make_cmd() {
-    IMAGE=$(echo ${TMP_JSON} | jq -r .image)
-    CONTAINER=$(echo ${TMP_JSON} | jq -r .container)
+    IMAGE=$(echo ${1} | jq -r .image)
+    CONTAINER=$(echo ${1} | jq -r .container)
     if [ "${IMAGE}" != "null" ]; then
         make_image_cmd
     elif [ "${CONTAINER}" != "null" ]; then
@@ -110,7 +110,6 @@ parse_schedule() {
 function build_crontab() {
     rm -rf ${CRONTAB_FILE}
     while read i ; do
-        #echo "parse $(jq .[$i] ${CONFIG})"
 
         SCHEDULE=$(jq -r .[$i].schedule ${CONFIG} | sed 's/\*/\\*/g')
         if [ "${SCHEDULE}" == "null" ]; then
@@ -124,17 +123,15 @@ function build_crontab() {
             continue
         fi
 
-        TMP_JSON=$(jq -c .[$i] ${CONFIG})
-        COMMAND=$(make_cmd)
+        COMMAND=$(make_cmd "$(jq -c .[$i] ${CONFIG})")
         if [ "$(jq -r .[$i].trigger ${CONFIG})" != "null" ]; then
             while read j ; do
-                echo "trigger parse $(jq .[$i].trigger[$j] ${CONFIG})"
                 if [ "$(jq .[$i].trigger[$j].command ${CONFIG})" == "null" ]; then
                     echo "Command Missing: $(jq -r .[$i].trigger[$j].command ${CONFIG})"
                     continue
                 fi
-                TMP_JSON=$(jq -c .[$i].trigger[$j] ${CONFIG})
-                COMMAND="$COMMAND && $(make_cmd)"
+                TRIGGER_COMMANDS=$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")
+                COMMAND="${COMMAND} && ${TRIGGER_COMMANDS}"
             done < <(jq -r '.['$i'].trigger|keys[]' ${CONFIG})
         fi
 
@@ -152,9 +149,6 @@ function build_crontab() {
     echo "crontab generation complete"
     cat ${CRONTAB_FILE}
 }
-
-# Used to pass json to functions - total hack, I know
-TMP_JSON=
 
 if [ "$1" = "crond" ]; then
     if [ -f ${CONFIG} ]; then

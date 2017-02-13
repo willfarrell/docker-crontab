@@ -47,14 +47,12 @@ EOF
 }
 
 make_cmd() {
-    IMAGE=$(echo ${1} | jq -r .image)
-    CONTAINER=$(echo ${1} | jq -r .container)
-    if [ "${IMAGE}" != "null" ]; then
-        make_image_cmd
-    elif [ "${CONTAINER}" != "null" ]; then
-        make_container_cmd
+    if [ "$(echo ${1} | jq -r .image)" != "null" ]; then
+        make_image_cmd "$1"
+    elif [ "$(echo ${1} | jq -r .container)" != "null" ]; then
+        make_container_cmd "$1"
     else
-        echo "echo 'Error making docker command, image or container param missing.'"
+        echo ${1} | jq -r .command
     fi
 }
 

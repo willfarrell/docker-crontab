@@ -22,12 +22,12 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - Ability to trigger scripts in other containers on completion cron job using `trigger`.
 
 ## Config.json
-- `comment`: Comments to be included with crontab entry
+- `comment`: Comments to be included with crontab entry. Optional.
 - `schedule`: Crontab schedule syntax as described in https://godoc.org/github.com/robfig/cron. Ex `@hourly`, `@every 1h30m`, `* * * * * *`. Required.
 - `command`: Command to be run on docker container/image. Required.
 - `image`: Docker images name (ex `library/alpine:3.5`). Optional.
 - `project`: Docker Compose/Swarm project name. Optional, only applies when `contain` is included.
-- `container`: Full container name or container alias if `project` is set. Ignored if `image` is included.
+- `container`: Full container name or container alias if `project` is set. Ignored if `image` is included. Optional.
 - `dockerargs`: Command line docker `run`/`exec` arguments for full control. Defaults to ` `.
 - `trigger`: Array of docker-crontab subset objects. Subset includes: `image`,`project`,`container`,`command`,`dockerargs` 
 

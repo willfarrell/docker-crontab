@@ -1,6 +1,6 @@
 # docker-crontab
 
-A simple wrapper over `docker` to all complex cron job to be run in other containers. All in ~4MB.
+A simple wrapper over `docker` to all complex cron job to be run in other containers.
 
 ## Supported tags and Dockerfile links
 
@@ -31,7 +31,7 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - `dockerargs`: Command line docker `run`/`exec` arguments for full control. Defaults to ` `.
 - `trigger`: Array of docker-crontab subset objects. Subset includes: `image`,`project`,`container`,`command`,`dockerargs` 
 
-See `./config.sample.json` for examples.
+See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/master/config.sample.json) for examples.
 
 ## Examples
 

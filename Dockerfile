@@ -1,8 +1,8 @@
 FROM library/alpine:3.5
 
 ENV HOME_DIR=/opt/crontab
-RUN apk add --no-cache --virtual .run-deps bash curl jq \
-    && mkdir -p ${HOME_DIR}
+RUN apk add --no-cache --virtual .run-deps bash jq \
+    && mkdir -p ${HOME_DIR}/projects
 
 COPY docker-entrypoint /
 ENTRYPOINT ["/docker-entrypoint"]

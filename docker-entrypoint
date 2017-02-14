@@ -6,7 +6,7 @@ set -e
 
 CONFIG=${HOME_DIR}/config.json
 DOCKER_SOCK=/var/run/docker.sock
-CRONTAB_FILE=${HOME_DIR}/docker
+CRONTAB_FILE=/etc/crontabs/docker
 
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
@@ -29,18 +29,16 @@ make_container_cmd() {
 
         # create bash script to detect all running containers
         SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
-cat << EOF > ${HOME_DIR}/${SCRIPT_NAME}
+cat << EOF > ${HOME_DIR}/projects/${SCRIPT_NAME}.sh
 #!/usr/bin/env bash
 set -e
 
-CONTAINERS=\$(docker ps --format '{{.Names}}')
+CONTAINERS=\$(docker ps --format '{{.Names}}' | grep -E "^${PROJECT}_${CONTAINER}_[0-9]+")
 for CONTAINER_NAME in \$CONTAINERS; do
-    if [[ "\${CONTAINER_NAME}" =~ ^${PROJECT}_${CONTAINER}.+ ]]; then
-        docker exec ${DOCKERARGS} \${CONTAINER_NAME} ${TMP_COMMAND}
-    fi
+    docker exec ${DOCKERARGS} \${CONTAINER_NAME} ${TMP_COMMAND}
 done
 EOF
-        echo "/bin/bash ${HOME_DIR}/${SCRIPT_NAME}"
+        echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
     else
         echo "docker exec ${DOCKERARGS} ${CONTAINER} ${TMP_COMMAND}"
     fi
@@ -107,6 +105,8 @@ parse_schedule() {
 
 function build_crontab() {
     rm -rf ${CRONTAB_FILE}
+
+    ONSTART=()
     while read i ; do
 
         SCHEDULE=$(jq -r .[$i].schedule ${CONFIG} | sed 's/\*/\\*/g')
@@ -142,10 +142,19 @@ function build_crontab() {
         fi
 
         echo "${SCHEDULE} ${COMMAND}" >> ${CRONTAB_FILE}
+
+        if [ "$(jq -r .[$i].onstart ${CONFIG})" == "true" ]; then
+            ONSTART+=("${COMMAND}")
+        fi
     done < <(jq -r '.|keys[]' ${CONFIG})
 
     echo "crontab generation complete"
     cat ${CRONTAB_FILE}
+
+    # Run onstart commands
+    for COMMAND in "${ONSTART}"; do
+        ${COMMAND}
+    done
 }
 
 if [ "$1" = "crond" ]; then

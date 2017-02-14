@@ -30,6 +30,7 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - `container`: Full container name or container alias if `project` is set. Ignored if `image` is included. Optional.
 - `dockerargs`: Command line docker `run`/`exec` arguments for full control. Defaults to ` `.
 - `trigger`: Array of docker-crontab subset objects. Subset includes: `image`,`project`,`container`,`command`,`dockerargs` 
+- `onstart`: run the command on `crontab` container start. Default `false`.
 
 See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/master/config.sample.json) for examples.
 
@@ -65,7 +66,7 @@ CMD ["crond", "-f"]
 
 ## TODO
 - [ ] Make smaller by using busybox?
-- [ ] Have ability to auto regenerate crontab on file change
+- [ ] Have ability to auto regenerate crontab on file change (signal HUP?)
 - [ ] Run commands on host machine (w/ --privileged?)
 - [ ] Write tests
 - [ ] Setup TravisCI

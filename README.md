@@ -30,19 +30,38 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - `container`: Full container name or container alias if `project` is set. Ignored if `image` is included. Optional.
 - `dockerargs`: Command line docker `run`/`exec` arguments for full control. Defaults to ` `.
 - `trigger`: Array of docker-crontab subset objects. Subset includes: `image`,`project`,`container`,`command`,`dockerargs` 
-- `onstart`: run the command on `crontab` container start. Default `false`.
+- `onstart`: Run the command on `crontab` container start, set to `true`. Optional, defaults to falsey.
 
 See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/master/config.sample.json) for examples.
 
-## Examples
+```json
+[{
+ 	"schedule":"@every 5m",
+ 	"command":"/usr/sbin/logrotate /etc/logrotate.conf"
+ },{
+ 	"comment":"Regenerate Certificate then reload nginx",
+ 	"schedule":"43 6,18 * * *",
+ 	"command":"sh -c 'dehydrated --cron --out /etc/ssl --domain ${LE_DOMAIN} --challenge dns-01 --hook dehydrated-dns'",
+ 	"dockerargs":"--env-file /opt/crontab/env/letsencrypt.env -v webapp_nginx_tls_cert:/etc/ssl -v webapp_nginx_acme_challenge:/var/www/.well-known/acme-challenge",
+ 	"image":"willfarrell/letsencrypt",
+ 	"trigger":[{
+ 		"command":"sh -c '/etc/scripts/make_hpkp ${NGINX_DOMAIN} && /usr/sbin/nginx -t && /usr/sbin/nginx -s reload'",
+ 		"project":"conduit",
+ 		"container":"nginx"
+ 	}],
+ 	"onstart":true
+ }]
+```
+
+## How to use
 
 ### Command Line
 ```bash
 docer build -t crontab .
 docker run -d \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /usr/bin/docker:/usr/bin/docker \
-    -v /path/to/config/dir:/opt/crontab \
+    -v /var/run/docker.sock:/var/run/docker.sock:ro \
+    -v /usr/bin/docker:/usr/bin/docker:ro \
+    -v /path/to/config/dir:/opt/crontab:rw \
     crontab
 ```
 
@@ -65,7 +84,6 @@ CMD ["crond", "-f"]
 ```
 
 ## TODO
-- [ ] Make smaller by using busybox?
 - [ ] Have ability to auto regenerate crontab on file change (signal HUP?)
 - [ ] Run commands on host machine (w/ --privileged?)
 - [ ] Write tests

@@ -10,6 +10,6 @@ services:
     build: .
     restart: always
     volumes:
-     - "/var/run/docker.sock:/var/run/docker.sock"
-     - "/usr/bin/docker:/usr/bin/docker"
-     - "/Users/willfarrell/Development/docker/crontab/home_dir:/opt/crontab"
+     - "/var/run/docker.sock:/var/run/docker.sock:ro"
+     - "/usr/bin/docker:/usr/bin/docker:ro"
+     - "/Users/willfarrell/Development/docker/crontab/home_dir:/opt/crontab:rw"

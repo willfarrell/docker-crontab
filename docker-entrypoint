@@ -44,11 +44,19 @@ EOF
     fi
 }
 
+#make_host_cmd() {
+#   HOST_BINARY=$(echo ${1} | jq -r .host)
+#   TMP_COMMAND=$(echo ${1} | jq -r .command)
+#   echo "${HOST_BINARY} ${TMP_COMMAND}"
+#}
+
 make_cmd() {
     if [ "$(echo ${1} | jq -r .image)" != "null" ]; then
         make_image_cmd "$1"
     elif [ "$(echo ${1} | jq -r .container)" != "null" ]; then
         make_container_cmd "$1"
+    #elif [ "$(echo ${1} | jq -r .host)" != "null" ]; then
+    #   make_host_cmd "$1"
     else
         echo ${1} | jq -r .command
     fi
@@ -153,7 +161,7 @@ function build_crontab() {
 
     # Run onstart commands
     for COMMAND in "${ONSTART}"; do
-        ${COMMAND}
+        ${COMMAND} &
     done
 }
 

@@ -78,7 +78,7 @@ FROM willfarrell/crontab
 
 RUN apk add --no-cache logrotate
 RUN echo "*/5 *	* * *  /usr/sbin/logrotate /etc/logrotate.conf" >> /etc/crontabs/logrotate
-ADD logrotate.conf /etc/logrotate.conf
+COPY logrotate.conf /etc/logrotate.conf
 
 CMD ["crond", "-f"]
 ```

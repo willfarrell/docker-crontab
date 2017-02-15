@@ -146,7 +146,7 @@ EOF
                     continue
                 fi
                 #TRIGGER_COMMAND=$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")
-                $(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})") >> ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
+                echo "$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")" >> ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
                 #COMMAND="${COMMAND} && ${TRIGGER_COMMAND}"
             done < <(jq -r '.['$i'].trigger|keys[]' ${CONFIG})
         fi

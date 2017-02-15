@@ -156,11 +156,12 @@ function build_crontab() {
         fi
     done < <(jq -r '.|keys[]' ${CONFIG})
 
-    echo "crontab generation complete"
+    echo "##### crontab generation complete #####"
     cat ${CRONTAB_FILE}
 
-    # Run onstart commands
+    echo "##### run commands with onstart #####"
     for COMMAND in "${ONSTART}"; do
+        echo "${COMMAND}"
         ${COMMAND} &
     done
 }

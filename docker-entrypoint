@@ -12,6 +12,9 @@ CONFIG=${HOME_DIR}/config.json
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
 
+# Ensure dir exist - in case of volume mapping
+mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
+
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
@@ -168,7 +171,7 @@ EOF
     cat ${CRONTAB_FILE}
 
     echo "##### run commands with onstart #####"
-    for COMMAND in "${ONSTART}"; do
+    for COMMAND in "${ONSTART[@]}"; do
         echo "${COMMAND}"
         ${COMMAND} &
     done

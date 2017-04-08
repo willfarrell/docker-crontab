@@ -60,7 +60,7 @@ See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/ma
 docer build -t crontab .
 docker run -d \
     -v /var/run/docker.sock:/var/run/docker.sock:ro \
-    -v /usr/bin/docker:/usr/bin/docker:ro \
+    -v ./env:/opt/env:ro \
     -v /path/to/config/dir:/opt/crontab:rw \
     crontab
 ```

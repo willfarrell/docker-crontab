@@ -25,7 +25,7 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - `name`: Human readable name that will be used as teh job filename. Optional.
 - `comment`: Comments to be included with crontab entry. Optional.
 - `schedule`: Crontab schedule syntax as described in https://godoc.org/github.com/robfig/cron. Ex `@hourly`, `@every 1h30m`, `* * * * * *`. Required.
-- `command`: Command to be run on docker container/image. Required.
+- `command`: Command to be run on in crontab container or docker container/image. Required.
 - `image`: Docker images name (ex `library/alpine:3.5`). Optional.
 - `project`: Docker Compose/Swarm project name. Optional, only applies when `contain` is included.
 - `container`: Full container name or container alias if `project` is set. Ignored if `image` is included. Optional.
@@ -86,7 +86,7 @@ COPY logrotate.conf /etc/logrotate.conf
 CMD ["crond", "-f"]
 ```
 
-### Logging
+### Logging - In Dev
 All `stdout` is captured, formatted, and saved to `/var/log/crontab/jobs.log`. Set `LOG_FILE` to `/dev/null` to disable logging.
 
 example: `2017-06-18T01:27:10+0000 e6ced859-1563-493b-b1b1-5a190b29e938 [info] Start Cronjob **map-a-vol** map a volume`

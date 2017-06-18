@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+LOG_FILE=./jobs.log
+touch ${LOG_FILE}
+UUID="xxxxxxxxxxxxxxxxx"
+
+exec > >(read message; echo "$(date) ${UUID} [info] $message" | tee -a ${LOG_FILE} )
+exec 2> >(read message; echo "$(date) ${UUID} [error] $message" | tee -a ${LOG_FILE} >&2)
+
+echo "Start"
+
+docker run alpine sh -c 'while :; do echo "ping"; sleep 1; done'
+# [error] write /dev/stdout: broken pipe
+
+echo "End"

@@ -34,6 +34,7 @@ make_image_cmd() {
 make_container_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
+    SCRIPT_NAME=$(echo ${1} | jq -r .name)
     PROJECT=$(echo ${1} | jq -r .project)
     CONTAINER=$(echo ${1} | jq -r .container)
     TMP_COMMAND=$(echo ${1} | jq -r .command)
@@ -41,18 +42,19 @@ make_container_cmd() {
     if [ "${PROJECT}" != "null" ]; then
 
         # create bash script to detect all running containers
-        SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
+        if [ "${SCRIPT_NAME}" == "null" ]; then
+            SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
+        fi
 cat << EOF > ${HOME_DIR}/projects/${SCRIPT_NAME}.sh
 #!/usr/bin/env bash
 set -e
-UUID=$1
-echo "project UUID ${UUID}"
+
 CONTAINERS=\$(docker ps --format '{{.Names}}' | grep -E "^${PROJECT}_${CONTAINER}_[0-9]+")
 for CONTAINER_NAME in \$CONTAINERS; do
     docker exec ${DOCKERARGS} \${CONTAINER_NAME} ${TMP_COMMAND}
 done
 EOF
-        echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh \${UUID}"
+        echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
     else
         echo "docker exec ${DOCKERARGS} ${CONTAINER} ${TMP_COMMAND}"
     fi
@@ -158,8 +160,11 @@ cat << EOF > ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
 #!/usr/bin/env bash
 set -e
 UUID=\$(cat /proc/sys/kernel/random/uuid)
-exec > >(read message; echo "\$(date -Iseconds) \${UUID} [info] \$message" | tee -a ${LOG_FILE} )
-exec 2> >(read message; echo "\$(date -Iseconds) \${UUID} [error] \$message" | tee -a ${LOG_FILE} >&2)
+# TODO enable
+# [error] write /dev/stdout: broken pipe <- when getting echo from docker stdout
+#exec > >(read message; echo "\$(date -Iseconds) \${UUID} [info] \$message" | tee -a ${LOG_FILE} )
+#exec 2> >(read message; echo "\$(date -Iseconds) \${UUID} [error] \$message" | tee -a ${LOG_FILE} >&2)
+
 
 echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
 

@@ -22,6 +22,7 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - Ability to trigger scripts in other containers on completion cron job using `trigger`.
 
 ## Config.json
+- `name`: Human readable name that will be used as teh job filename. Optional.
 - `comment`: Comments to be included with crontab entry. Optional.
 - `schedule`: Crontab schedule syntax as described in https://godoc.org/github.com/robfig/cron. Ex `@hourly`, `@every 1h30m`, `* * * * * *`. Required.
 - `command`: Command to be run on docker container/image. Required.
@@ -57,11 +58,12 @@ See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/ma
 
 ### Command Line
 ```bash
-docer build -t crontab .
+docker build -t crontab .
 docker run -d \
     -v /var/run/docker.sock:/var/run/docker.sock:ro \
     -v ./env:/opt/env:ro \
     -v /path/to/config/dir:/opt/crontab:rw \
+    -v /path/to/logs:/var/log/crontab:rw \
     crontab
 ```
 
@@ -70,6 +72,7 @@ docker run -d \
 FROM willfarrell/crontab
 
 COPY config.json ${HOME_DIR}/
+
 ```
 
 ### Logrotate Dockerfile
@@ -82,6 +85,14 @@ COPY logrotate.conf /etc/logrotate.conf
 
 CMD ["crond", "-f"]
 ```
+
+### Logging
+All `stdout` is captured, formatted, and saved to `/var/log/crontab/jobs.log`. Set `LOG_FILE` to `/dev/null` to disable logging.
+
+example: `2017-06-18T01:27:10+0000 e6ced859-1563-493b-b1b1-5a190b29e938 [info] Start Cronjob **map-a-vol** map a volume`
+
+grok: `CRONTABLOG %{TIMESTAMP_ISO8601:timestamp} %{DATA:request_id} \[%{LOGLEVEL:severity}\] %{GREEDYDATA:message}`
+
 
 ## TODO
 - [ ] Have ability to auto regenerate crontab on file change (signal HUP?)

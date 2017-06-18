@@ -8,12 +8,20 @@ fi
 # for local testing only
 #HOME_DIR=.
 
+if [ "${LOG_FILE}" == "" ]; then
+    LOG_DIR=/var/log/crontab
+	LOG_FILE=${LOG_DIR}/jobs.log
+	mkdir -p ${LOG_DIR}
+	touch ${LOG_FILE}
+fi
+
 CONFIG=${HOME_DIR}/config.json
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
 
 # Ensure dir exist - in case of volume mapping
 mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
+
 
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
@@ -37,13 +45,14 @@ make_container_cmd() {
 cat << EOF > ${HOME_DIR}/projects/${SCRIPT_NAME}.sh
 #!/usr/bin/env bash
 set -e
-
+UUID=$1
+echo "project UUID ${UUID}"
 CONTAINERS=\$(docker ps --format '{{.Names}}' | grep -E "^${PROJECT}_${CONTAINER}_[0-9]+")
 for CONTAINER_NAME in \$CONTAINERS; do
     docker exec ${DOCKERARGS} \${CONTAINER_NAME} ${TMP_COMMAND}
 done
 EOF
-        echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
+        echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh \${UUID}"
     else
         echo "docker exec ${DOCKERARGS} ${CONTAINER} ${TMP_COMMAND}"
     fi
@@ -139,14 +148,24 @@ function build_crontab() {
             echo "# ${COMMENT}" >> ${CRONTAB_FILE}
         fi
 
-        SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
+        SCRIPT_NAME=$(jq -r .[$i].name ${CONFIG})
+        if [ "${SCRIPT_NAME}" == "null" ]; then
+            SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
+        fi
+
         COMMAND="/bin/bash ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh"
 cat << EOF > ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
 #!/usr/bin/env bash
 set -e
+UUID=\$(cat /proc/sys/kernel/random/uuid)
+exec > >(read message; echo "\$(date -Iseconds) \${UUID} [info] \$message" | tee -a ${LOG_FILE} )
+exec 2> >(read message; echo "\$(date -Iseconds) \${UUID} [error] \$message" | tee -a ${LOG_FILE} >&2)
 
-echo "cron: ${COMMENT}"
+echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
+
 $(make_cmd "$(jq -c .[$i] ${CONFIG})")
+
+echo "End Cronjob **${SCRIPT_NAME}** ${COMMENT}"
 EOF
         if [ "$(jq -r .[$i].trigger ${CONFIG})" != "null" ]; then
             while read j ; do

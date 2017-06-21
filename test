@@ -5,8 +5,8 @@ LOG_FILE=./jobs.log
 touch ${LOG_FILE}
 UUID="xxxxxxxxxxxxxxxxx"
 
-exec > >(read message; echo "$(date) ${UUID} [info] $message" | tee -a ${LOG_FILE} )
-exec 2> >(read message; echo "$(date) ${UUID} [error] $message" | tee -a ${LOG_FILE} >&2)
+exec > >(read message; echo "${UUID} $(date) [info] $message" | tee -a ${LOG_FILE} )
+exec 2> >(read message; echo "${UUID} $(date) [error] $message" | tee -a ${LOG_FILE} >&2)
 
 echo "Start"
 

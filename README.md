@@ -89,9 +89,9 @@ CMD ["crond", "-f"]
 ### Logging - In Dev
 All `stdout` is captured, formatted, and saved to `/var/log/crontab/jobs.log`. Set `LOG_FILE` to `/dev/null` to disable logging.
 
-example: `2017-06-18T01:27:10+0000 e6ced859-1563-493b-b1b1-5a190b29e938 [info] Start Cronjob **map-a-vol** map a volume`
+example: `e6ced859-1563-493b-b1b1-5a190b29e938 2017-06-18T01:27:10+0000 [info] Start Cronjob **map-a-vol** map a volume`
 
-grok: `CRONTABLOG %{TIMESTAMP_ISO8601:timestamp} %{DATA:request_id} \[%{LOGLEVEL:severity}\] %{GREEDYDATA:message}`
+grok: `CRONTABLOG %{DATA:request_id} %{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:severity}\] %{GREEDYDATA:message}`
 
 
 ## TODO

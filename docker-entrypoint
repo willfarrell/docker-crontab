@@ -81,25 +81,25 @@ make_cmd() {
 parse_schedule() {
 	case $1 in
         "@yearly")
-            echo "0 0 0 1 1 *"
+            echo "0 0 1 1 *"
             ;;
         "@annually")
-            echo "0 0 0 1 1 *"
+            echo "0 0 1 1 *"
             ;;
         "@monthly")
-            echo "0 0 0 1 * *"
+            echo "0 0 1 * *"
             ;;
         "@weekly")
-            echo "0 0 0 * * 0"
+            echo "0 0 * * 0"
             ;;
         "@daily")
-            echo "0 0 0 * * *"
+            echo "0 0 * * *"
             ;;
         "@midnight")
-            echo "0 0 0 * * *"
+            echo "0 0 * * *"
             ;;
         "@hourly")
-            echo "0 0 * * * *"
+            echo "0 * * * *"
             ;;
         "@every")
             TIME=$2
@@ -119,7 +119,7 @@ parse_schedule() {
                 TOTAL=$(($TOTAL + ${D::-1} * 60 * 24))
             fi
 
-            echo "*/${TOTAL} * * * * *"
+            echo "*/${TOTAL} * * * *"
             ;;
         *)
             echo "${@}"

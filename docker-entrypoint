@@ -22,6 +22,9 @@ CRONTAB_FILE=/etc/crontabs/docker
 # Ensure dir exist - in case of volume mapping
 mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
 
+slugify() {
+    echo "$@" | iconv -t ascii | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
+}
 
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
@@ -151,6 +154,7 @@ function build_crontab() {
         fi
 
         SCRIPT_NAME=$(jq -r .[$i].name ${CONFIG})
+        SCRIPT_NAME=$(slugify $SCRIPT_NAME)
         if [ "${SCRIPT_NAME}" == "null" ]; then
             SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
         fi

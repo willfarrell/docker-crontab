@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+# This file is for testing the logging of docker output #8
+
 LOG_FILE=./jobs.log
 touch ${LOG_FILE}
 UUID="xxxxxxxxxxxxxxxxx"

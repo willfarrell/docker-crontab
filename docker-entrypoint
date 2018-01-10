@@ -22,6 +22,11 @@ CRONTAB_FILE=/etc/crontabs/docker
 # Ensure dir exist - in case of volume mapping
 mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
 
+# Create docker group using correct gid from host, and add docker user to it
+DOCKER_GID=$(stat -c '%g' ${DOCKER_SOCK})
+addgroup -g ${DOCKER_GID} docker
+adduser docker docker
+
 slugify() {
     echo "$@" | iconv -t ascii | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
 }

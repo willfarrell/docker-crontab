@@ -25,8 +25,12 @@ mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
 # Create docker group using correct gid from host, and add docker user to it
 if ! grep -q "^docker:" /etc/group; then
 	DOCKER_GID=$(stat -c '%g' ${DOCKER_SOCK})
-	addgroup -g ${DOCKER_GID} docker
-	adduser docker docker
+	if [ "${DOCKER_GID}" != "0" ]; then
+        addgroup -g ${DOCKER_GID} docker
+        adduser docker docker
+	else
+	    adduser docker root
+	fi
 fi
 
 slugify() {

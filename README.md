@@ -57,6 +57,7 @@ See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/ma
 ## How to use
 
 ### Command Line
+
 ```bash
 docker build -t crontab .
 docker run -d \
@@ -67,7 +68,19 @@ docker run -d \
     crontab
 ```
 
+### Use with docker-compose
+
+1. Figure out which network name used for your docker-compose containers
+	* use `docker network ls` to see existing networks
+	* if your `docker-compose.yml` is in `my_dir` directory, you probably has network `my_dir_default`
+	* otherwise [read the docker-compose docs](https://docs.docker.com/compose/networking/)
+2. Add `dockerargs` to your docker-crontab `config.json`
+	* use `--network NETWORK_NAME` to connect new container into docker-compose network
+	* use `--rm --name NAME` to use named container
+	* e.g. `"dockerargs": "--network my_dir_default --rm --name my-best-cron-job"`
+
 ### Dockerfile
+
 ```Dockerfile
 FROM willfarrell/crontab
 
@@ -76,6 +89,7 @@ COPY config.json ${HOME_DIR}/
 ```
 
 ### Logrotate Dockerfile
+
 ```Dockerfile
 FROM willfarrell/crontab
 
@@ -87,12 +101,12 @@ CMD ["crond", "-f"]
 ```
 
 ### Logging - In Dev
+
 All `stdout` is captured, formatted, and saved to `/var/log/crontab/jobs.log`. Set `LOG_FILE` to `/dev/null` to disable logging.
 
 example: `e6ced859-1563-493b-b1b1-5a190b29e938 2017-06-18T01:27:10+0000 [info] Start Cronjob **map-a-vol** map a volume`
 
 grok: `CRONTABLOG %{DATA:request_id} %{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:severity}\] %{GREEDYDATA:message}`
-
 
 ## TODO
 - [ ] Have ability to auto regenerate crontab on file change (signal HUP?)

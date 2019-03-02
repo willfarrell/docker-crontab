@@ -11,4 +11,4 @@ ENTRYPOINT ["/docker-entrypoint"]
 HEALTHCHECK --interval=5s --timeout=3s \
     CMD ps aux | grep '[c]rond' || exit 1
 
-CMD ["crond","-f"]
+CMD ["crond", "-f", "-d", "0", "-c", "/etc/crontabs"]

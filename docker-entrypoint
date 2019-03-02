@@ -12,7 +12,7 @@ if [ "${LOG_FILE}" == "" ]; then
     LOG_DIR=/var/log/crontab
 	LOG_FILE=${LOG_DIR}/jobs.log
 	mkdir -p ${LOG_DIR}
-	touch ${LOG_FILE}
+    touch ${LOG_FILE}
 fi
 
 CONFIG=${HOME_DIR}/config.json
@@ -40,7 +40,7 @@ slugify() {
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
-    IMAGE=$(echo ${1} | jq -r .image)
+    IMAGE=$(echo ${1} | jq -r .image | envsubst)
     TMP_COMMAND=$(echo ${1} | jq -r .command)
     echo "docker run ${DOCKERARGS} ${IMAGE} ${TMP_COMMAND}"
 }
@@ -50,7 +50,7 @@ make_container_cmd() {
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
     SCRIPT_NAME=$(echo ${1} | jq -r .name)
     PROJECT=$(echo ${1} | jq -r .project)
-    CONTAINER=$(echo ${1} | jq -r .container)
+    CONTAINER=$(echo ${1} | jq -r .container | envsubst)
     TMP_COMMAND=$(echo ${1} | jq -r .command)
 
     if [ "${PROJECT}" != "null" ]; then

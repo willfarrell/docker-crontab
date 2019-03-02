@@ -1,7 +1,7 @@
 FROM library/docker:stable
 
 ENV HOME_DIR=/opt/crontab
-RUN apk add --no-cache --virtual .run-deps bash jq \
+RUN apk add --no-cache --virtual .run-deps gettext bash jq \
     && mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects \
     && adduser -S docker -D
 

@@ -49,6 +49,7 @@ make_container_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
     SCRIPT_NAME=$(echo ${1} | jq -r .name)
+    SCRIPT_NAME=$(slugify $SCRIPT_NAME)
     PROJECT=$(echo ${1} | jq -r .project)
     CONTAINER=$(echo ${1} | jq -r .container)
     TMP_COMMAND=$(echo ${1} | jq -r .command)

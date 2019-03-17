@@ -22,16 +22,26 @@ CRONTAB_FILE=/etc/crontabs/docker
 # Ensure dir exist - in case of volume mapping
 mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
 
-# Create docker group using correct gid from host, and add docker user to it
-if ! grep -q "^docker:" /etc/group; then
-	DOCKER_GID=$(stat -c '%g' ${DOCKER_SOCK})
-	if [ "${DOCKER_GID}" != "0" ]; then
-        addgroup -g ${DOCKER_GID} docker
-        adduser docker docker
-	else
-	    adduser docker root
-	fi
-fi
+ensure_docker_socket_accessible() {
+    if ! grep -q "^docker:" /etc/group; then
+        # Ensure 'docker' user has permissions for docker socket (without changing permissions)
+        DOCKER_GID=$(stat -c '%g' ${DOCKER_SOCK})
+        if [ "${DOCKER_GID}" != "0" ]; then
+            if ! grep -qE "^[^:]+:[^:]+:${DOCKER_GID}:" /etc/group; then
+                # No group with such gid exists - create group docker
+                addgroup -g ${DOCKER_GID} docker
+                adduser docker docker
+            else
+                # Group with such gid exists - add user "docker" to this group
+                DOCKER_GROUP_NAME=`getent group "${DOCKER_GID}" | awk -F':' '{{ print $1 }}'`
+                adduser docker $DOCKER_GROUP_NAME
+            fi
+        else
+            # Docker socket belongs to "root" group - add user "docker" to this group
+            adduser docker root
+        fi
+    fi
+}
 
 slugify() {
     echo "$@" | iconv -t ascii | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
@@ -219,6 +229,8 @@ EOF
         ${COMMAND} &
     done
 }
+
+ensure_docker_socket_accessible
 
 if [ "$1" = "crond" ]; then
     if [ -f ${CONFIG} ]; then

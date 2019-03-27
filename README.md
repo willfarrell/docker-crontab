@@ -10,7 +10,7 @@ A simple wrapper over `docker` to all complex cron job to be run in other contai
 
 
 ## Why?
-Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia) (280MB), it was the main inspiration for this project. 
+Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia) (~10MB), it was the main inspiration for this project. 
 A great project, don't get me wrong. It was just missing certain key enterprise features I felt were required to support where docker is heading.
 
 ## Features

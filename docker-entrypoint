@@ -15,20 +15,15 @@ if [ "${LOG_FILE}" == "" ]; then
     touch ${LOG_FILE}
 fi
 
-
-if [ -f "${HOME_DIR}/config.toml" ]; then
-    python3 -c "with open('${HOME_DIR}/config.toml') as ct, open('${HOME_DIR}/config.json', 'w') as cj: import toml; import json; json.dump(list(toml.load(ct).values()), cj)"
-elif [ -f "${HOME_DIR}/config.yml" ]; then
-    python3 -c "with open('${HOME_DIR}/config.yml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
-elif [ -f "${HOME_DIR}/config.yaml" ]; then
-    python3 -c "with open('${HOME_DIR}/config.yaml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
-fi
-
-if [ -f "${HOME_DIR}/config.json" ]; then
-    CONFIG=${HOME_DIR}/config.json
-else
-    echo "NO CONFIG FILE FOUND"
-fi
+get_config() {
+    if [ -f "${HOME_DIR}/config.toml" ]; then
+        python3 -c "with open('${HOME_DIR}/config.toml') as ct, open('${HOME_DIR}/config.json', 'w') as cj: import toml; import json; json.dump(list(toml.load(ct).values()), cj)"
+    elif [ -f "${HOME_DIR}/config.yml" ]; then
+        python3 -c "with open('${HOME_DIR}/config.yml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
+    elif [ -f "${HOME_DIR}/config.yaml" ]; then
+        python3 -c "with open('${HOME_DIR}/config.yaml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
+    fi
+}
 
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
@@ -183,6 +178,7 @@ parse_schedule() {
 }
 
 function build_crontab() {
+        
     rm -rf ${CRONTAB_FILE}
 
     ONSTART=()
@@ -260,15 +256,25 @@ EOF
     done
 }
 
+
 ensure_docker_socket_accessible
 
-if [ "$1" = "crond" ]; then
-    if [ -f ${CONFIG} ]; then
-        build_crontab
+start_app() {
+    get_config
+    if [ -f "${HOME_DIR}/config.json" ]; then
+        export CONFIG=${HOME_DIR}/config.json
     else
-        echo "Unable to find ${CONFIG}"
+        echo "NO CONFIG FILE FOUND"
     fi
-fi
+    if [ "$1" = "crond" ]; then
+        if [ -f ${CONFIG} ]; then
+            build_crontab
+        else
+            echo "Unable to find ${CONFIG}"
+        fi
+    fi
+    echo "$@"
+    exec "$@"
+}
 
-echo "$@"
-exec "$@"
+start_app "$@"

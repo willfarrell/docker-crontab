@@ -2,3 +2,4 @@
 *.iml
 
 config.json
+.vscode

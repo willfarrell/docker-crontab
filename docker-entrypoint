@@ -19,7 +19,7 @@ get_config() {
     if [ -f "${HOME_DIR}/config.toml" ]; then
         python3 -c "with open('${HOME_DIR}/config.toml') as ct, open('${HOME_DIR}/config.json', 'w') as cj: import toml; import json; json.dump(list(toml.load(ct).values()), cj)"
     elif [ -f "${HOME_DIR}/config.yml" ]; then
-        python3 -c "with open('${HOME_DIR}/config.yml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
+        python3 -c "with open('${HOME_DIR}/config.yml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy)), cj)"
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
         python3 -c "with open('${HOME_DIR}/config.yaml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
     fi

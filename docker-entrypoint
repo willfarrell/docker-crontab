@@ -64,13 +64,13 @@ slugify() {
 
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
-    VOLUMES=$(echo ${1} | jq -r '.volumes | map(" -v " + .) | join("")')
-    PORTS=$(echo ${1} | jq -r '.ports | map(" -p " + .) | join("")')
-    EXPOSE=$(echo ${1} | jq -r '.expose | map(" --expose " + .) | join("")')
+    VOLUMES=$(echo ${1} | jq -r 'select(.volumes != null) | .volumes | map(" -v " + .) | join("")')
+    PORTS=$(echo ${1} | jq -r 'select(.ports != null) | .ports | map(" -p " + .) | join("")')
+    EXPOSE=$(echo ${1} | jq -r 'select(.expose != null) | .expose | map(" --expose " + .) | join("")')
     # We'll add name in, if it exists
     NAME=$(echo ${1} | jq -r 'select(.name != null) | .name')
     NETWORK=$(echo ${1} | jq -r 'select(.network != null) | .network')
-    ENVIRONMENT=$(echo ${1} | jq -r '.environment | map(" -e " + .) | join("")')
+    ENVIRONMENT=$(echo ${1} | jq -r 'select(.environment != null) | .environment | map(" -e " + .) | join("")')
     # echo ${1} | jq -r '.environment | join("\n")' > ${PWD}/${NAME}.env
     # ENVIRONMENT=" --env-file ${PWD}/${NAME}.env"
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi

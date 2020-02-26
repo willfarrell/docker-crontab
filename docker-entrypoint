@@ -16,13 +16,19 @@ if [ "${LOG_FILE}" == "" ]; then
 fi
 
 get_config() {
+    YAML_CONFIG_FILE=""
     if [ -f "${HOME_DIR}/config.toml" ]; then
         python3 -c "with open('${HOME_DIR}/config.toml') as ct, open('${HOME_DIR}/config.json', 'w') as cj: import toml; import json; json.dump(list(toml.load(ct).values()), cj)"
     elif [ -f "${HOME_DIR}/config.yml" ]; then
-        python3 -c "with open('${HOME_DIR}/config.yml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy)), cj)"
+        YAML_CONFIG_FILE="${HOME_DIR}/config.yml"
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
-        python3 -c "with open('${HOME_DIR}/config.yaml') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy).values()), cj)"
+        YAML_CONFIG_FILE="${HOME_DIR}/config.yaml"
     fi
+
+    if [ -n "${YAML_CONFIG_FILE}" ]; then
+        python3 -c "with open('${YAML_CONFIG_FILE}') as cy, open('${HOME_DIR}/config.json', 'w') as cj: import yaml; import json; json.dump(list(yaml.safe_load(cy)), cj)"
+    fi
+
 }
 
 DOCKER_SOCK=/var/run/docker.sock

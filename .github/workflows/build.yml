@@ -37,7 +37,7 @@ jobs:
         name: Conditional(Set tag as `{version}`)
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
-      - if: env.tag
+      - 
         name: Build and push
         uses: docker/build-push-action@v2
         with:

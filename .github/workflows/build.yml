@@ -37,7 +37,7 @@ jobs:
         name: Conditional(Set tag as `{version}`)
         run: echo "tag=willfarrell/crontab:${GITHUB_REF#refs/*/} >> $GITHUB_ENV"
 
-      - run: echo "$tag"
+      - run: echo "${{ env.tag }}"
 
       -
         name: Build and push

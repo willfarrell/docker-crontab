@@ -37,18 +37,12 @@ jobs:
         name: Conditional(Set tag as `{version}`)
         run: echo "tag=willfarrell/crontab:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
-      - run: |
-          echo "$tag"
-          echo "${{ env.tag }}"
-          echo "${{ toJson(env) }}"
-
       -
         name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
           push: true
           tags: |
             ${{ env.tag }}

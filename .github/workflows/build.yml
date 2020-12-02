@@ -37,6 +37,8 @@ jobs:
         name: Conditional(Set tag as `{version}`)
         run: echo "tag=${GITHUB_REF#refs/*/} >> $GITHUB_ENV"
 
+      - run: echo "$tag
+
       -
         name: Build and push
         uses: docker/build-push-action@v2

@@ -6,7 +6,7 @@ A simple wrapper over `docker` to all complex cron job to be run in other contai
 
 -	[`latest` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/master/Dockerfile)
 
-[![](https://images.microbadger.com/badges/version/willfarrell/crontab.svg)](http://microbadger.com/images/willfarrell/crontab "Get your own version badge on microbadger.com") [![](https://images.microbadger.com/badges/image/willfarrell/crontab.svg)](http://microbadger.com/images/willfarrell/crontab "Get your own image badge on microbadger.com")
+![](https://img.shields.io/docker/pulls/willfarrell/crontab "Total docker pulls") [![](https://images.microbadger.com/badges/image/willfarrell/crontab.svg)](http://microbadger.com/images/willfarrell/crontab "Get your own image badge on microbadger.com")
 
 
 ## Why?

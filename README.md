@@ -5,6 +5,7 @@ A simple wrapper over `docker` to all complex cron job to be run in other contai
 ## Supported tags and Dockerfile links
 
 -	[`latest` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/master/Dockerfile)
+-	[`1.0.0` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/1.0.0/Dockerfile)
 
 ![](https://img.shields.io/docker/pulls/willfarrell/crontab "Total docker pulls") [![](https://images.microbadger.com/badges/image/willfarrell/crontab.svg)](http://microbadger.com/images/willfarrell/crontab "Get your own image badge on microbadger.com")
 

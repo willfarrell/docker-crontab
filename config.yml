@@ -1,0 +1,40 @@
+- command: echo hello
+  comment: cron with triggered commands
+  container: myapp
+  project: crontab
+  schedule: '* * * * *'
+  trigger:
+  - command: echo world
+    container: crontab_myapp_1
+- command: echo new
+  comment: map a volume
+  dockerargs: -d -v /tmp:/tmp
+  image: alpine:3.5
+  schedule: '* * * * *'
+- command: sh -c 'echo hourly ${FOO}'
+  comment: use an ENV from inside a container
+  dockerargs: -d -e FOO=BAR
+  image: alpine:3.5
+  schedule: '@hourly'
+- command: echo 2 minute
+  comment: trigger every 2 min
+  image: alpine:3.5
+  schedule: '@every 2m'
+  trigger:
+  - command: echo world
+    container: crontab_myapp_1
+- command: /usr/sbin/logrotate /etc/logrotate.conf
+  schedule: '*/5 * * * *'
+- command: sh -c 'dehydrated --cron --out /etc/ssl --domain ${LE_DOMAIN} --challenge
+    dns-01 --hook dehydrated-dns'
+  comment: Regenerate Certificate then reload nginx
+  dockerargs: --env-file /opt/crontab/env/letsencrypt.env -v webapp_nginx_tls_cert:/etc/ssl
+    -v webapp_nginx_acme_challenge:/var/www/.well-known/acme-challenge
+  image: willfarrell/letsencrypt
+  onstart: true
+  schedule: 43 6,18 * * *
+  trigger:
+  - command: sh -c '/etc/scripts/make_hpkp ${NGINX_DOMAIN} && /usr/sbin/nginx -t &&
+      /usr/sbin/nginx -s reload'
+    container: nginx
+    project: conduit

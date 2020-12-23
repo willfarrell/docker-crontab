@@ -1,0 +1,60 @@
+[
+  {
+    "comment": "cron with triggered commands",
+    "schedule": "* * * * *",
+    "command": "echo hello",
+    "project": "crontab",
+    "container": "myapp",
+    "trigger": [
+      {
+        "command": "echo world",
+        "container": "crontab_myapp_1"
+      }
+    ]
+  },
+  {
+    "comment": "map a volume",
+    "schedule": "* * * * *",
+    "dockerargs": "-d -v /tmp:/tmp",
+    "command": "echo new",
+    "image": "alpine:3.5"
+  },
+  {
+    "comment": "use an ENV from inside a container",
+    "schedule": "@hourly",
+    "dockerargs": "-d -e FOO=BAR",
+    "command": "sh -c 'echo hourly ${FOO}'",
+    "image": "alpine:3.5"
+  },
+  {
+    "comment": "trigger every 2 min",
+    "schedule": "@every 2m",
+    "command": "echo 2 minute",
+    "image": "alpine:3.5",
+    "trigger": [
+      {
+        "command": "echo world",
+        "container": "crontab_myapp_1"
+      }
+    ]
+  },
+  {
+    "schedule": "*/5 * * * *",
+    "command": "/usr/sbin/logrotate /etc/logrotate.conf"
+  },
+  {
+    "comment": "Regenerate Certificate then reload nginx",
+    "schedule": "43 6,18 * * *",
+    "command": "sh -c 'dehydrated --cron --out /etc/ssl --domain ${LE_DOMAIN} --challenge dns-01 --hook dehydrated-dns'",
+    "dockerargs": "--env-file /opt/crontab/env/letsencrypt.env -v webapp_nginx_tls_cert:/etc/ssl -v webapp_nginx_acme_challenge:/var/www/.well-known/acme-challenge",
+    "image": "willfarrell/letsencrypt",
+    "trigger": [
+      {
+        "command": "sh -c '/etc/scripts/make_hpkp ${NGINX_DOMAIN} && /usr/sbin/nginx -t && /usr/sbin/nginx -s reload'",
+        "project": "conduit",
+        "container": "nginx"
+      }
+    ],
+    "onstart": true
+  }
+]

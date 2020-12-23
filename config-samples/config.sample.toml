@@ -1,3 +1,4 @@
+# toml files can only have top-loevl mappings, so this is the only sample
 ["cron with triggered commands"]
 comment = "cron with triggered commands"
 schedule = "* * * * *"

@@ -16,7 +16,11 @@ if [ "${LOG_FILE}" == "" ]; then
 fi
 
 get_config() {
-    if [ -f "${HOME_DIR}/config.toml" ]; then
+    if [ -f "${HOME_DIR}/config.json" ]; then
+        cp ${HOME_DIR}/config.json ${HOME_DIR}/config.json.old
+        jq 'map(.)' ${HOME_DIR}/config.json.old > ${HOME_DIR}/config.json
+        rm ${HOME_DIR}/config.json.old
+    elif [ -f "${HOME_DIR}/config.toml" ]; then
         rq -t <<< $(cat ${HOME_DIR}/config.toml) | jq 'map(.)' > ${HOME_DIR}/config.json
     elif [ -f "${HOME_DIR}/config.yml" ]; then
         rq -y <<< $(cat ${HOME_DIR}/config.yml) | jq 'map(.)' > ${HOME_DIR}/config.json

@@ -17,9 +17,7 @@ fi
 
 get_config() {
     if [ -f "${HOME_DIR}/config.json" ]; then
-        cp ${HOME_DIR}/config.json ${HOME_DIR}/config.json.old
-        jq 'map(.)' ${HOME_DIR}/config.json.old > ${HOME_DIR}/config.json
-        rm ${HOME_DIR}/config.json.old
+        jq 'map(.)' ${HOME_DIR}/config.json > ${HOME_DIR}/config.working.json
     elif [ -f "${HOME_DIR}/config.toml" ]; then
         rq -t <<< $(cat ${HOME_DIR}/config.toml) | jq 'map(.)' > ${HOME_DIR}/config.json
     elif [ -f "${HOME_DIR}/config.yml" ]; then
@@ -265,8 +263,10 @@ ensure_docker_socket_accessible
 
 start_app() {
     get_config
-    if [ -f "${HOME_DIR}/config.json" ]; then
-        export CONFIG=${HOME_DIR}/config.json
+    if [ -f "${HOME_DIR}/config.working.json" ]; then
+        export CONFIG=${HOME_DIR}/config.working.json
+    elif [ -f "${HOME_DIR}/config.json" ]; then
+         export CONFIG=${HOME_DIR}/config.json
     else
         echo "NO CONFIG FILE FOUND"
     fi

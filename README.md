@@ -5,12 +5,13 @@ A simple wrapper over `docker` to all complex cron job to be run in other contai
 ## Supported tags and Dockerfile links
 
 -	[`latest` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/master/Dockerfile)
+-	[`1.0.0` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/1.0.0/Dockerfile)
 -	[`0.6.0` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/0.6.0/Dockerfile)
 
 ![](https://img.shields.io/docker/pulls/willfarrell/crontab "Total docker pulls") [![](https://images.microbadger.com/badges/image/willfarrell/crontab.svg)](http://microbadger.com/images/willfarrell/crontab "Get your own image badge on microbadger.com")
 
 ## Why?
-Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia) (~10MB), it was the main inspiration for this project. 
+Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia) (>250MB when this was created), it was the main inspiration for this project. 
 A great project, don't get me wrong. It was just missing certain key enterprise features I felt were required to support where docker is heading.
 
 ## Features

@@ -11,5 +11,4 @@ services:
     restart: always
     volumes:
      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    # - "/usr/bin/docker:/usr/bin/docker:ro"
-     - "/Users/willfarrell/Development/docker/docker-crontab/config.json:/opt/crontab/config.json:rw"
+     - "${PWD}/config-samples/config.sample.mapping.json:/opt/crontab/config.json:rw"

@@ -15,7 +15,18 @@ if [ "${LOG_FILE}" == "" ]; then
     touch ${LOG_FILE}
 fi
 
-CONFIG=${HOME_DIR}/config.json
+get_config() {
+    if [ -f "${HOME_DIR}/config.json" ]; then
+        jq 'map(.)' ${HOME_DIR}/config.json > ${HOME_DIR}/config.working.json
+    elif [ -f "${HOME_DIR}/config.toml" ]; then
+        rq -t <<< $(cat ${HOME_DIR}/config.toml) | jq 'map(.)' > ${HOME_DIR}/config.json
+    elif [ -f "${HOME_DIR}/config.yml" ]; then
+        rq -y <<< $(cat ${HOME_DIR}/config.yml) | jq 'map(.)' > ${HOME_DIR}/config.json
+    elif [ -f "${HOME_DIR}/config.yaml" ]; then
+        rq -y <<< $(cat ${HOME_DIR}/config.yaml) | jq 'map(.)' > ${HOME_DIR}/config.json
+    fi
+}
+
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
 
@@ -49,7 +60,22 @@ slugify() {
 
 make_image_cmd() {
     DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
+    VOLUMES=$(echo ${1} | jq -r '.volumes | map(" -v " + .) | join("")')
+    PORTS=$(echo ${1} | jq -r '.ports | map(" -p " + .) | join("")')
+    EXPOSE=$(echo ${1} | jq -r '.expose | map(" --expose " + .) | join("")')
+    # We'll add name in, if it exists
+    NAME=$(echo ${1} | jq -r 'select(.name != null) | .name')
+    NETWORK=$(echo ${1} | jq -r 'select(.network != null) | .network')
+    ENVIRONMENT=$(echo ${1} | jq -r '.environment | map(" -e " + .) | join("")')
+    # echo ${1} | jq -r '.environment | join("\n")' > ${PWD}/${NAME}.env
+    # ENVIRONMENT=" --env-file ${PWD}/${NAME}.env"
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
+    if [ ! -z "${NAME}" ]; then DOCKERARGS="${DOCKERARGS} --rm --name ${NAME} "; fi
+    if [ ! -z "${NETWORK}" ]; then DOCKERARGS="${DOCKERARGS} --network ${NETWORK} "; fi
+    if [ ! -z "${VOLUMES}" ]; then DOCKERARGS="${DOCKERARGS}${VOLUMES}"; fi
+    if [ ! -z "${ENVIRONMENT}" ]; then DOCKERARGS="${DOCKERARGS}${ENVIRONMENT}"; fi
+    if [ ! -z "${PORTS}" ]; then DOCKERARGS="${DOCKERARGS}${PORTS}"; fi
+    if [ ! -z "${EXPOSE}" ]; then DOCKERARGS="${DOCKERARGS}${EXPOSE}"; fi
     IMAGE=$(echo ${1} | jq -r .image | envsubst)
     TMP_COMMAND=$(echo ${1} | jq -r .command)
     echo "docker run ${DOCKERARGS} ${IMAGE} ${TMP_COMMAND}"
@@ -80,6 +106,7 @@ for CONTAINER_NAME in \$CONTAINERS; do
 done
 EOF
         echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
+        # cat "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
     else
         echo "docker exec ${DOCKERARGS} ${CONTAINER} ${TMP_COMMAND}"
     fi
@@ -153,6 +180,7 @@ parse_schedule() {
 }
 
 function build_crontab() {
+        
     rm -rf ${CRONTAB_FILE}
 
     ONSTART=()
@@ -230,15 +258,27 @@ EOF
     done
 }
 
+
 ensure_docker_socket_accessible
 
-if [ "$1" = "crond" ]; then
-    if [ -f ${CONFIG} ]; then
-        build_crontab
+start_app() {
+    get_config
+    if [ -f "${HOME_DIR}/config.working.json" ]; then
+        export CONFIG=${HOME_DIR}/config.working.json
+    elif [ -f "${HOME_DIR}/config.json" ]; then
+         export CONFIG=${HOME_DIR}/config.json
     else
-        echo "Unable to find ${HOME_DIR}/config.json"
+        echo "NO CONFIG FILE FOUND"
     fi
-fi
+    if [ "$1" = "crond" ]; then
+        if [ -f ${CONFIG} ]; then
+            build_crontab
+        else
+            echo "Unable to find ${CONFIG}"
+        fi
+    fi
+    echo "$@"
+    exec "$@"
+}
 
-echo "$@"
-exec "$@"
+start_app "$@"

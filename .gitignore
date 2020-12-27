@@ -2,3 +2,5 @@
 *.iml
 
 config.json
+.vscode
+.DS_Store

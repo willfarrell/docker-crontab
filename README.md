@@ -21,7 +21,10 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - Run command on a instances of a scaled container using `project`.
 - Ability to trigger scripts in other containers on completion cron job using `trigger`.
 
-## Config.json
+## Config file
+
+The config file can be specifed in any of `json`, `toml`, or `yaml`, and can be defined as either an array or mapping (top-level keys will be ignored; can be useful for organizing commands)
+
 - `name`: Human readable name that will be used as the job filename. Will be converted into a slug. Optional.
 - `comment`: Comments to be included with crontab entry. Optional.
 - `schedule`: Crontab schedule syntax as described in https://en.wikipedia.org/wiki/Cron. Ex `@hourly`, `@every 1h30m`, `* * * * *`. Required.
@@ -33,7 +36,7 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - `trigger`: Array of docker-crontab subset objects. Subset includes: `image`,`project`,`container`,`command`,`dockerargs` 
 - `onstart`: Run the command on `crontab` container start, set to `true`. Optional, defaults to falsey.
 
-See [`config.sample.json`](https://github.com/willfarrell/docker-crontab/blob/master/config.sample.json) for examples.
+See [`config-samples`](config-samples) for examples.
 
 ```json
 [{

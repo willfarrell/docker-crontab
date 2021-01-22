@@ -29,6 +29,9 @@ get_config() {
 
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
+if [ -z "$CRONTAB_PROJECT" ]; then
+    export CRONTAB_PROJECT=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' $HOSTNAME)
+fi
 
 # Ensure dir exist - in case of volume mapping
 mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
@@ -86,7 +89,7 @@ make_container_cmd() {
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
     SCRIPT_NAME=$(echo ${1} | jq -r .name)
     SCRIPT_NAME=$(slugify $SCRIPT_NAME)
-    PROJECT=$(echo ${1} | jq -r .project)
+    PROJECT=$(echo ${1} | jq -r .project | envsubst)
     CONTAINER=$(echo ${1} | jq -r .container | envsubst)
     TMP_COMMAND=$(echo ${1} | jq -r .command)
 
@@ -180,7 +183,6 @@ parse_schedule() {
 }
 
 function build_crontab() {
-        
     rm -rf ${CRONTAB_FILE}
 
     ONSTART=()

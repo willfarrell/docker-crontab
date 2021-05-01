@@ -8,6 +8,8 @@ fi
 # for local testing only
 #HOME_DIR=.
 
+echo_timestamped "##### Establishing log file #####"
+
 if [ "${LOG_FILE}" == "" ]; then
     LOG_DIR=/var/log/crontab
 	LOG_FILE=${LOG_DIR}/jobs.log
@@ -16,6 +18,8 @@ if [ "${LOG_FILE}" == "" ]; then
 fi
 
 get_config() {
+    echo_timestamped "##### Reading configuration #####"
+
     if [ -f "${HOME_DIR}/config.json" ]; then
         jq 'map(.)' ${HOME_DIR}/config.json > ${HOME_DIR}/config.working.json
     elif [ -f "${HOME_DIR}/config.toml" ]; then
@@ -112,19 +116,11 @@ EOF
     fi
 }
 
-#make_host_cmd() {
-#   HOST_BINARY=$(echo ${1} | jq -r .host)
-#   TMP_COMMAND=$(echo ${1} | jq -r .command)
-#   echo "${HOST_BINARY} ${TMP_COMMAND}"
-#}
-
 make_cmd() {
     if [ "$(echo ${1} | jq -r .image)" != "null" ]; then
         make_image_cmd "$1"
     elif [ "$(echo ${1} | jq -r .container)" != "null" ]; then
         make_container_cmd "$1"
-    #elif [ "$(echo ${1} | jq -r .host)" != "null" ]; then
-    #   make_host_cmd "$1"
     else
         echo ${1} | jq -r .command
     fi
@@ -183,18 +179,20 @@ function build_crontab() {
         
     rm -rf ${CRONTAB_FILE}
 
+    echo_timestamped "##### crontab generation starting #####"
+
     ONSTART=()
     while read i ; do
 
         SCHEDULE=$(jq -r .[$i].schedule ${CONFIG} | sed 's/\*/\\*/g')
         if [ "${SCHEDULE}" == "null" ]; then
-            echo "Schedule Missing: $(jq -r .[$i].schedule ${CONFIG})"
+            echo_timestamped "Schedule Missing: $(jq -r .[$i].schedule ${CONFIG})"
             continue
         fi
         SCHEDULE=$(parse_schedule ${SCHEDULE} | sed 's/\\//g')
 
         if [ "$(jq -r .[$i].command ${CONFIG})" == "null" ]; then
-            echo "Command Missing: $(jq -r .[$i].command ${CONFIG})"
+            echo_timestamped "Command Missing: $(jq -r .[$i].command ${CONFIG})"
             continue
         fi
 
@@ -220,7 +218,7 @@ set -e
 #exec > >(read message; echo "\${UUID} \$(date -Iseconds) [info] \$message" | tee -a ${LOG_FILE} )
 #exec 2> >(read message; echo "\${UUID} \$(date -Iseconds) [error] \$message" | tee -a ${LOG_FILE} >&2)
 
-echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
+echo_timestamped "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
 
 $(make_cmd "$(jq -c .[$i] ${CONFIG})")
 EOF
@@ -230,7 +228,7 @@ EOF
         if [ "$(jq -r .[$i].trigger ${CONFIG})" != "null" ]; then
             while read j ; do
                 if [ "$(jq .[$i].trigger[$j].command ${CONFIG})" == "null" ]; then
-                    echo "Command Missing: $(jq -r .[$i].trigger[$j].command ${CONFIG})"
+                    echo_timestamped "Command Missing: $(jq -r .[$i].trigger[$j].command ${CONFIG})"
                     continue
                 fi
                 #TRIGGER_COMMAND=$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")
@@ -239,7 +237,7 @@ EOF
             done < <(jq -r '.['$i'].trigger|keys[]' ${CONFIG})
         fi
 
-        echo "echo \"End Cronjob **${SCRIPT_NAME}** ${COMMENT}\"" >> ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
+        echo "echo_timestamped \"End Cronjob **${SCRIPT_NAME}** ${COMMENT}\"" >> ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
 
         echo "${SCHEDULE} ${COMMAND}" >> ${CRONTAB_FILE}
 
@@ -248,12 +246,12 @@ EOF
         fi
     done < <(jq -r '.|keys[]' ${CONFIG})
 
-    echo "##### crontab generation complete #####"
+    echo_timestamped "##### crontab generation complete #####"
     cat ${CRONTAB_FILE}
 
-    echo "##### run commands with onstart #####"
+    echo_timestamped "##### run commands with onstart #####"
     for COMMAND in "${ONSTART[@]}"; do
-        echo "${COMMAND}"
+        echo_timestamped "${COMMAND}"
         ${COMMAND} &
     done
 }
@@ -263,21 +261,24 @@ ensure_docker_socket_accessible
 
 start_app() {
     get_config
+
+    echo_timestamped "##### Validating configuration #####"
+
     if [ -f "${HOME_DIR}/config.working.json" ]; then
         export CONFIG=${HOME_DIR}/config.working.json
     elif [ -f "${HOME_DIR}/config.json" ]; then
          export CONFIG=${HOME_DIR}/config.json
     else
-        echo "NO CONFIG FILE FOUND"
+        echo_timestamped "NO CONFIG FILE FOUND IN ${HOME_DIR}"
     fi
     if [ "$1" = "crond" ]; then
         if [ -f ${CONFIG} ]; then
             build_crontab
         else
-            echo "Unable to find ${CONFIG}"
+            echo_timestamped "Unable to find ${CONFIG}"
         fi
     fi
-    echo "$@"
+    echo_timestamped "$@"
     exec "$@"
 }
 

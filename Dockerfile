@@ -23,4 +23,6 @@ ENTRYPOINT ["/sbin/tini", "--", "/docker-entrypoint"]
 HEALTHCHECK --interval=5s --timeout=3s \
     CMD ps aux | grep '[c]rond' || exit 1
 
+ADD echo_timestamped /usr/sbin/echo_timestamped
+
 CMD ["crond", "-f", "-d", "6", "-c", "/etc/crontabs"]

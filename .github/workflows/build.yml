@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - dns-utils
     tags:
       - '*'
   schedule:
@@ -37,7 +36,7 @@ jobs:
         name: Conditional(Set tag as `latest`)
         env: # Or as an environment variable
           docker_repo: ${{ secrets.DOCKER_REPO }}
-        run: echo "tag=${env.docker_repo}/crontab:latest" >> $GITHUB_ENV
+        run: echo "tag=${{env.docker_repo}}/crontab:latest" >> $GITHUB_ENV
 
       - if: startsWith(github.ref, 'refs/tags/')
         name: Conditional(Set tag as `{version}`)

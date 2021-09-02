@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - main
+      - dns-utils
     tags:
       - '*'
   schedule:
     - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
 
 jobs:
   multi:
@@ -32,11 +35,25 @@ jobs:
 
       - if: github.ref == 'refs/heads/main'
         name: Conditional(Set tag as `latest`)
-        run: echo "tag=willfarrell/crontab:latest" >> $GITHUB_ENV
+        env: # Or as an environment variable
+          docker_repo: ${{ secrets.DOCKER_REPO }}
+        run: echo "tag=${env.docker_repo}/crontab:latest" >> $GITHUB_ENV
 
       - if: startsWith(github.ref, 'refs/tags/')
         name: Conditional(Set tag as `{version}`)
-        run: echo "tag=willfarrell/crontab:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        env: # Or as an environment variable
+          docker_repo: ${{ secrets.DOCKER_REPO }}
+        run: |
+          echo "docker_repo = ${{env.docker_repo}}"
+          echo "tag=${{env.docker_repo}}/crontab:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - if: startsWith(github.ref, 'refs/heads/')
+        name: Conditional(Set tag as `{version}`)
+        env: # Or as an environment variable
+          docker_repo: ${{ secrets.DOCKER_REPO }}
+        run: |
+          echo "docker_repo = ${{env.docker_repo}}"
+          echo "tag=${{env.docker_repo}}/crontab:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       -
         name: Build and push

@@ -14,6 +14,8 @@ COPY --from=rq-build /root/rq /usr/local/bin
 
 ENV HOME_DIR=/opt/crontab
 RUN apk add --no-cache --virtual .run-deps gettext jq bash tini \
+    && apk add curl \
+    && apk add bind-tools \
     && mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects \
     && adduser -S docker -D
 

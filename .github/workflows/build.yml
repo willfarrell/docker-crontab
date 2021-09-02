@@ -46,7 +46,7 @@ jobs:
           echo "docker_repo = ${{env.docker_repo}}"
           echo "tag=${{env.docker_repo}}/crontab:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
-      - if: startsWith(github.ref, 'refs/heads/')
+      - if: github.ref != 'refs/heads/main' && startsWith(github.ref, 'refs/heads/')
         name: Conditional(Set tag as `{version}`)
         env: # Or as an environment variable
           docker_repo: ${{ secrets.DOCKER_REPO }}

@@ -259,7 +259,10 @@ EOF
 }
 
 
-ensure_docker_socket_accessible
+if [ -z "$DOCKER_HOST" ]; then
+    echo "Testing docker socket accessibility"
+    ensure_docker_socket_accessible
+fi
 
 start_app() {
     get_config

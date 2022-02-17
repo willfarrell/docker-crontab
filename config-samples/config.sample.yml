@@ -38,3 +38,9 @@
       /usr/sbin/nginx -s reload'
     container: nginx
     project: conduit
+- name: run-as-different-user
+  dockerargs: '-u user'
+  command: php occ fulltextsearch:index
+  comment: re-indexing nextcloud fulltext search for documents
+  container: nextcloud
+  schedule: '30  2 * * *'

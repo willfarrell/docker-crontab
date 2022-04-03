@@ -19,11 +19,11 @@ get_config() {
     if [ -f "${HOME_DIR}/config.json" ]; then
         jq 'map(.)' ${HOME_DIR}/config.json > ${HOME_DIR}/config.working.json
     elif [ -f "${HOME_DIR}/config.toml" ]; then
-        rq -t <<< $(cat ${HOME_DIR}/config.toml) | jq 'map(.)' > ${HOME_DIR}/config.json
+        yj -t < ${HOME_DIR}/config.toml | jq 'map(.)' > ${HOME_DIR}/config.json
     elif [ -f "${HOME_DIR}/config.yml" ]; then
-        rq -y <<< $(cat ${HOME_DIR}/config.yml) | jq 'map(.)' > ${HOME_DIR}/config.json
+        yj -y <  ${HOME_DIR}/config.yml | jq 'map(.)' > ${HOME_DIR}/config.json
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
-        rq -y <<< $(cat ${HOME_DIR}/config.yaml) | jq 'map(.)' > ${HOME_DIR}/config.json
+        yj -y < ${HOME_DIR}/config.yaml | jq 'map(.)' > ${HOME_DIR}/config.json
     fi
 }
 

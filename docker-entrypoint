@@ -70,12 +70,12 @@ make_image_cmd() {
     # echo ${1} | jq -r '.environment | join("\n")' > ${PWD}/${NAME}.env
     # ENVIRONMENT=" --env-file ${PWD}/${NAME}.env"
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
-    if [ ! -z "${NAME}" ]; then DOCKERARGS="${DOCKERARGS} --rm --name ${NAME} "; fi
-    if [ ! -z "${NETWORK}" ]; then DOCKERARGS="${DOCKERARGS} --network ${NETWORK} "; fi
-    if [ ! -z "${VOLUMES}" ]; then DOCKERARGS="${DOCKERARGS}${VOLUMES}"; fi
-    if [ ! -z "${ENVIRONMENT}" ]; then DOCKERARGS="${DOCKERARGS}${ENVIRONMENT}"; fi
-    if [ ! -z "${PORTS}" ]; then DOCKERARGS="${DOCKERARGS}${PORTS}"; fi
-    if [ ! -z "${EXPOSE}" ]; then DOCKERARGS="${DOCKERARGS}${EXPOSE}"; fi
+    if [ -n "${NAME}" ]; then DOCKERARGS="${DOCKERARGS} --rm --name ${NAME} "; fi
+    if [ -n "${NETWORK}" ]; then DOCKERARGS="${DOCKERARGS} --network ${NETWORK} "; fi
+    if [ -n "${VOLUMES}" ]; then DOCKERARGS="${DOCKERARGS}${VOLUMES}"; fi
+    if [ -n "${ENVIRONMENT}" ]; then DOCKERARGS="${DOCKERARGS}${ENVIRONMENT}"; fi
+    if [ -n "${PORTS}" ]; then DOCKERARGS="${DOCKERARGS}${PORTS}"; fi
+    if [ -n "${EXPOSE}" ]; then DOCKERARGS="${DOCKERARGS}${EXPOSE}"; fi
     IMAGE=$(echo "${1}" | jq -r .image | envsubst)
     TMP_COMMAND=$(echo "${1}" | jq -r .command)
     echo "docker run ${DOCKERARGS} ${IMAGE} ${TMP_COMMAND}"

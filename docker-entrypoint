@@ -16,7 +16,7 @@ fi
 mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
 
 if [ -z "${DOCKER_HOST}" ] && [ -a "${DOCKER_PORT_2375_TCP}" ]; then
-    export DOCKER_HOST='tcp://docker:2375'
+    export DOCKER_HOST="tcp://docker:2375"
 fi
 
 if [ "${LOG_FILE}" == "" ]; then
@@ -188,14 +188,14 @@ function build_crontab() {
     while read -r i ; do
         SCHEDULE=$(jq -r .["$i"].schedule "${CONFIG}" | sed 's/\*/\\*/g')
         if [ "${SCHEDULE}" == "null" ]; then
-            echo "Schedule Missing: $(jq -r .["$i"].schedule "${CONFIG}")"
+            echo "'schedule' missing: $(jq -r .["$i"].schedule "${CONFIG}")"
             continue
         fi
         SCHEDULE=$(parse_schedule "${SCHEDULE}" | sed 's/\\//g')
 
         COMMAND=$(jq -r .["$i"].command "${CONFIG}")
         if [ "${COMMAND}" == "null" ]; then
-            echo "Command Missing: '${COMMAND}'"
+            echo "'command' missing: '${COMMAND}'"
             continue
         fi
 
@@ -219,7 +219,7 @@ cat << EOF > "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 #!/usr/bin/env bash
 set -e
 
-echo "Start Cronjob **${SCRIPT_NAME}**${COMMENT}"
+echo "start cron job **${SCRIPT_NAME}**${COMMENT}"
 $(make_cmd "$(jq -c .["$i"] "${CONFIG}")")
 EOF
         TRIGGER=$(jq -r .["$i"].trigger "${CONFIG}")
@@ -227,14 +227,14 @@ EOF
             while read -r j ; do
                 TRIGGER_COMMAND=$(jq .["$i"].trigger["$j"].command "${CONFIG}")
                 if [ "${TRIGGER_COMMAND}" == "null" ]; then
-                    echo "Command Missing: '${TRIGGER_COMMAND}'"
+                    echo "'command' missing: '${TRIGGER_COMMAND}'"
                     continue
                 fi
                 make_cmd "${TRIGGER_COMMAND}" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
             done < <(jq -r '.['"$i"'].trigger|keys[]' "${CONFIG}")
         fi
 
-        echo "echo \"End Cronjob **${SCRIPT_NAME}**${COMMENT}\"" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
+        echo "echo \"end cron job **${SCRIPT_NAME}**${COMMENT}\"" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 
         echo "${SCHEDULE} ${COMMAND}" >> ${CRONTAB_FILE}
 
@@ -257,7 +257,7 @@ start_app() {
     normalize_config
     export CONFIG=${HOME_DIR}/config.working.json
     if [ ! -f "${CONFIG}" ]; then
-        echo "Unable to find ${CONFIG}."
+        echo "generated ${CONFIG} missing."
         exit 1
     fi
     if [ "${1}" == "crond" ]; then

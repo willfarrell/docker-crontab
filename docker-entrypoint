@@ -44,7 +44,7 @@ ensure_docker_socket_accessible() {
                 adduser docker docker
             else
                 # Group with such gid exists - add user "docker" to this group
-                DOCKER_GROUP_NAME=`getent group "${DOCKER_GID}" | awk -F':' '{{ print $1 }}'`
+                DOCKER_GROUP_NAME=$(getent group "${DOCKER_GID}" | awk -F':' '{{ print $1 }}')
                 adduser docker "$DOCKER_GROUP_NAME"
             fi
         else

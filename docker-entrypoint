@@ -229,7 +229,7 @@ EOF
                     echo "Command Missing: '${TRIGGER_COMMAND}'"
                     continue
                 fi
-                make_cmd "$(jq -c .["$i"].trigger["$j"] "${CONFIG}")" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
+                make_cmd "${TRIGGER_COMMAND}" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
             done < <(jq -r '.['"$i"'].trigger|keys[]' "${CONFIG}")
         fi
 

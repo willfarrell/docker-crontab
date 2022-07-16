@@ -186,7 +186,6 @@ function build_crontab() {
 
     ONSTART=()
     while read -r i ; do
-
         SCHEDULE=$(jq -r .["$i"].schedule "${CONFIG}" | sed 's/\*/\\*/g')
         if [ "${SCHEDULE}" == "null" ]; then
             echo "Schedule Missing: $(jq -r .["$i"].schedule "${CONFIG}")"
@@ -203,6 +202,9 @@ function build_crontab() {
         COMMENT=$(jq -r .["$i"].comment "${CONFIG}")
         if [ "${COMMENT}" != "null" ]; then
             echo "# ${COMMENT}" >> ${CRONTAB_FILE}
+        else
+            # Reset COMMENT to empty rather than keep the 'null' value.
+            COMMENT=
         fi
 
         SCRIPT_NAME=$(jq -r .["$i"].name "${CONFIG}")
@@ -217,7 +219,6 @@ cat << EOF > "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 set -e
 
 echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
-
 $(make_cmd "$(jq -c .["$i"] "${CONFIG}")")
 EOF
         TRIGGER=$(jq -r .["$i"].trigger "${CONFIG}")

@@ -19,7 +19,6 @@ if [ -z "${DOCKER_HOST}" ] && [ -a "${DOCKER_PORT_2375_TCP}" ]; then
     export DOCKER_HOST='tcp://docker:2375'
 fi
 
-
 if [ "${LOG_FILE}" == "" ]; then
     LOG_DIR=/var/log/crontab
     LOG_FILE=${LOG_DIR}/jobs.log
@@ -38,7 +37,7 @@ normalize_config() {
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
         JSON_CONFIG="$(rq -y <<< "$(cat "${HOME_DIR}"/config.yaml)")"
     fi
-    jq 'map(.)' "${JSON_CONFIG}" > "${HOME_DIR}"/config.working.json
+    jq -r 'map(.)' <<< "${JSON_CONFIG}" > "${HOME_DIR}"/config.working.json
 }
 
 ensure_docker_socket_accessible() {

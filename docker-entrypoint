@@ -16,14 +16,14 @@ fi
 mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
 
 if [ -z "${DOCKER_HOST}" ] && [ -a "${DOCKER_PORT_2375_TCP}" ]; then
-	export DOCKER_HOST='tcp://docker:2375'
+    export DOCKER_HOST='tcp://docker:2375'
 fi
 
 
 if [ "${LOG_FILE}" == "" ]; then
     LOG_DIR=/var/log/crontab
-	LOG_FILE=${LOG_DIR}/jobs.log
-	mkdir -p ${LOG_DIR}
+    LOG_FILE=${LOG_DIR}/jobs.log
+    mkdir -p ${LOG_DIR}
     touch ${LOG_FILE}
 fi
 
@@ -134,7 +134,7 @@ make_cmd() {
 }
 
 parse_schedule() {
-	case $1 in
+    case $1 in
         "@yearly")
             echo "0 0 1 1 *"
             ;;

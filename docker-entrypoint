@@ -184,7 +184,7 @@ function build_crontab() {
     rm -rf ${CRONTAB_FILE}
 
     ONSTART=()
-    while read i ; do
+    while read -r i ; do
 
         SCHEDULE=$(jq -r .["$i"].schedule "${CONFIG}" | sed 's/\*/\\*/g')
         if [ "${SCHEDULE}" == "null" ]; then
@@ -228,7 +228,7 @@ EOF
 
 
         if [ "$(jq -r .["$i"].trigger "${CONFIG}")" != "null" ]; then
-            while read j ; do
+            while read -r j ; do
                 if [ "$(jq .["$i"].trigger["$j"].command "${CONFIG}")" == "null" ]; then
                     echo "Command Missing: $(jq -r .["$i"].trigger["$j"].command "${CONFIG}")"
                     continue

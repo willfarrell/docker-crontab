@@ -22,7 +22,7 @@ if [ "${LOG_FILE}" == "" ]; then
     touch ${LOG_FILE}
 fi
 
-get_config() {
+normalize_config() {
     JSON_CONFIG={}
     if [ -f "${HOME_DIR}/config.json" ]; then
         JSON_CONFIG="$(cat "${HOME_DIR}"/config.json)"
@@ -245,7 +245,7 @@ EOF
 }
 
 start_app() {
-    get_config
+    normalize_config
     export CONFIG=${HOME_DIR}/config.working.json
     if [ ! -f "${CONFIG}" ]; then
         echo "Unable to find ${CONFIG}."

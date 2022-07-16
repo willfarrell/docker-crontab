@@ -19,11 +19,11 @@ get_config() {
     if [ -f "${HOME_DIR}/config.json" ]; then
         jq 'map(.)' "${HOME_DIR}"/config.json > "${HOME_DIR}"/config.working.json
     elif [ -f "${HOME_DIR}/config.toml" ]; then
-        rq -t <<< $(cat "${HOME_DIR}"/config.toml) | jq 'map(.)' > "${HOME_DIR}"/config.json
+        rq -t <<< "$(cat "${HOME_DIR}"/config.toml)" | jq 'map(.)' > "${HOME_DIR}"/config.json
     elif [ -f "${HOME_DIR}/config.yml" ]; then
-        rq -y <<< $(cat "${HOME_DIR}"/config.yml) | jq 'map(.)' > "${HOME_DIR}"/config.json
+        rq -y <<< "$(cat "${HOME_DIR}"/config.yml)" | jq 'map(.)' > "${HOME_DIR}"/config.json
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
-        rq -y <<< $(cat "${HOME_DIR}"/config.yaml) | jq 'map(.)' > "${HOME_DIR}"/config.json
+        rq -y <<< "$(cat "${HOME_DIR}"/config.yaml)" | jq 'map(.)' > "${HOME_DIR}"/config.json
     fi
 }
 
@@ -234,7 +234,7 @@ EOF
                     continue
                 fi
                 #TRIGGER_COMMAND=$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")
-                echo "$(make_cmd "$(jq -c .["$i"].trigger["$j"] "${CONFIG}")")" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
+                make_cmd "$(jq -c .["$i"].trigger["$j"] "${CONFIG}")" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
                 #COMMAND="${COMMAND} && ${TRIGGER_COMMAND}"
             done < <(jq -r '.['"$i"'].trigger|keys[]' "${CONFIG}")
         fi

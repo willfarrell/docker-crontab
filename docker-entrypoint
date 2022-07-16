@@ -55,7 +55,7 @@ ensure_docker_socket_accessible() {
 }
 
 slugify() {
-    echo "$@" | iconv -t ascii | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
+    echo "$@" | iconv -t ascii | sed -r s/[~^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr '[:upper:]' '[:lower:]'
 }
 
 make_image_cmd() {

@@ -201,10 +201,11 @@ function build_crontab() {
 
         COMMENT=$(jq -r .["$i"].comment "${CONFIG}")
         if [ "${COMMENT}" != "null" ]; then
-            echo "# ${COMMENT}" >> ${CRONTAB_FILE}
+            COMMENT=" ${COMMENT}"
+            echo "#${COMMENT}" >> ${CRONTAB_FILE}
         else
             # Reset COMMENT to empty rather than keep the 'null' value.
-            COMMENT=
+            COMMENT=" "
         fi
 
         SCRIPT_NAME=$(jq -r .["$i"].name "${CONFIG}")
@@ -218,7 +219,7 @@ cat << EOF > "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 #!/usr/bin/env bash
 set -e
 
-echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
+echo "Start Cronjob **${SCRIPT_NAME}**${COMMENT}"
 $(make_cmd "$(jq -c .["$i"] "${CONFIG}")")
 EOF
         TRIGGER=$(jq -r .["$i"].trigger "${CONFIG}")
@@ -233,7 +234,7 @@ EOF
             done < <(jq -r '.['"$i"'].trigger|keys[]' "${CONFIG}")
         fi
 
-        echo "echo \"End Cronjob **${SCRIPT_NAME}** ${COMMENT}\"" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
+        echo "echo \"End Cronjob **${SCRIPT_NAME}**${COMMENT}\"" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 
         echo "${SCHEDULE} ${COMMAND}" >> ${CRONTAB_FILE}
 

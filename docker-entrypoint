@@ -195,8 +195,9 @@ function build_crontab() {
         fi
         SCHEDULE=$(parse_schedule "${SCHEDULE}" | sed 's/\\//g')
 
-        if [ "$(jq -r .["$i"].command "${CONFIG}")" == "null" ]; then
-            echo "Command Missing: $(jq -r .["$i"].command "${CONFIG}")"
+        COMMAND=$(jq -r .["$i"].command "${CONFIG}")
+        if [ "${COMMAND}" == "null" ]; then
+            echo "Command Missing: '${COMMAND}'"
             continue
         fi
 
@@ -220,10 +221,12 @@ echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
 
 $(make_cmd "$(jq -c .["$i"] "${CONFIG}")")
 EOF
-        if [ "$(jq -r .["$i"].trigger "${CONFIG}")" != "null" ]; then
+        TRIGGER=$(jq -r .["$i"].trigger "${CONFIG}")
+        if [ "${TRIGGER}" != "null" ]; then
             while read -r j ; do
-                if [ "$(jq .["$i"].trigger["$j"].command "${CONFIG}")" == "null" ]; then
-                    echo "Command Missing: $(jq -r .["$i"].trigger["$j"].command "${CONFIG}")"
+                TRIGGER_COMMAND=$(jq .["$i"].trigger["$j"].command "${CONFIG}")
+                if [ "${TRIGGER_COMMAND}" == "null" ]; then
+                    echo "Command Missing: '${TRIGGER_COMMAND}'"
                     continue
                 fi
                 make_cmd "$(jq -c .["$i"].trigger["$j"] "${CONFIG}")" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh

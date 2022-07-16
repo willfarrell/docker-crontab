@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
+DOCKER_SOCK=/var/run/docker.sock
+CRONTAB_FILE=/etc/crontabs/docker
+
+# For local testing only.
+#HOME_DIR=.
+
+# Ensure dir exist - in case of volume mapping.
+mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
+
 if [ -z "$DOCKER_HOST" ] && [ -a "$DOCKER_PORT_2375_TCP" ]; then
 	export DOCKER_HOST='tcp://docker:2375'
 fi
 
-# For local testing only.
-#HOME_DIR=.
 
 if [ "${LOG_FILE}" == "" ]; then
     LOG_DIR=/var/log/crontab
@@ -28,12 +35,6 @@ get_config() {
     fi
     jq 'map(.)' "${JSON_CONFIG}" > "${HOME_DIR}"/config.working.json
 }
-
-DOCKER_SOCK=/var/run/docker.sock
-CRONTAB_FILE=/etc/crontabs/docker
-
-# Ensure dir exist - in case of volume mapping.
-mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
 
 ensure_docker_socket_accessible() {
     if ! grep -q "^docker:" /etc/group; then
@@ -243,8 +244,6 @@ EOF
     done
 }
 
-ensure_docker_socket_accessible
-
 start_app() {
     get_config
     export CONFIG=${HOME_DIR}/config.working.json
@@ -259,4 +258,5 @@ start_app() {
     exec "$@"
 }
 
+ensure_docker_socket_accessible
 start_app "$@"

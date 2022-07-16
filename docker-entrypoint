@@ -162,13 +162,13 @@ parse_schedule() {
             D=$(echo "$TIME" | grep -o '[0-9]\+d')
 
             if [ -n "${M}" ]; then
-                TOTAL=$(($TOTAL + ${M::-1}))
+                TOTAL=$((TOTAL + ${M::-1}))
             fi
             if [ -n "${H}" ]; then
-                TOTAL=$(($TOTAL + ${H::-1} * 60))
+                TOTAL=$((TOTAL + ${H::-1} * 60))
             fi
             if [ -n "${D}" ]; then
-                TOTAL=$(($TOTAL + ${D::-1} * 60 * 24))
+                TOTAL=$((TOTAL + ${D::-1} * 60 * 24))
             fi
 
             echo "*/${TOTAL} * * * *"

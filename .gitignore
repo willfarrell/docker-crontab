@@ -1,6 +1,10 @@
 .idea
 *.iml
-
-config.json
 .vscode
 .DS_Store
+
+config.json
+config.working.json
+
+jobs/
+projects/

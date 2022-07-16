@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 set -e
 
-if [ -z "$DOCKER_HOST" -a "$DOCKER_PORT_2375_TCP" ]; then
+DOCKER_SOCK=/var/run/docker.sock
+CRONTAB_FILE=/etc/crontabs/docker
+
+# For local testing only.
+#HOME_DIR=.
+
+if [ -z "${HOME_DIR}" ]; then
+    echo "HOME_DIR not set."
+    exit 1
+fi
+
+# Ensure dir exist - in case of volume mapping.
+mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
+
+if [ -z "${DOCKER_HOST}" ] && [ -a "${DOCKER_PORT_2375_TCP}" ]; then
 	export DOCKER_HOST='tcp://docker:2375'
 fi
 
-# for local testing only
-#HOME_DIR=.
 
 if [ "${LOG_FILE}" == "" ]; then
     LOG_DIR=/var/log/crontab
@@ -15,88 +27,80 @@ if [ "${LOG_FILE}" == "" ]; then
     touch ${LOG_FILE}
 fi
 
-get_config() {
+normalize_config() {
+    JSON_CONFIG={}
     if [ -f "${HOME_DIR}/config.json" ]; then
-        jq 'map(.)' ${HOME_DIR}/config.json > ${HOME_DIR}/config.working.json
+        JSON_CONFIG="$(cat "${HOME_DIR}"/config.json)"
     elif [ -f "${HOME_DIR}/config.toml" ]; then
-        rq -t <<< $(cat ${HOME_DIR}/config.toml) | jq 'map(.)' > ${HOME_DIR}/config.json
+        JSON_CONFIG="$(rq -t <<< "$(cat "${HOME_DIR}"/config.toml)")"
     elif [ -f "${HOME_DIR}/config.yml" ]; then
-        rq -y <<< $(cat ${HOME_DIR}/config.yml) | jq 'map(.)' > ${HOME_DIR}/config.json
+        JSON_CONFIG="$(rq -y <<< "$(cat "${HOME_DIR}"/config.yml)")"
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
-        rq -y <<< $(cat ${HOME_DIR}/config.yaml) | jq 'map(.)' > ${HOME_DIR}/config.json
+        JSON_CONFIG="$(rq -y <<< "$(cat "${HOME_DIR}"/config.yaml)")"
     fi
+    jq 'map(.)' "${JSON_CONFIG}" > "${HOME_DIR}"/config.working.json
 }
-
-DOCKER_SOCK=/var/run/docker.sock
-CRONTAB_FILE=/etc/crontabs/docker
-
-# Ensure dir exist - in case of volume mapping
-mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects
 
 ensure_docker_socket_accessible() {
     if ! grep -q "^docker:" /etc/group; then
-        # Ensure 'docker' user has permissions for docker socket (without changing permissions)
+        # Ensure 'docker' user has permissions for docker socket (without changing permissions).
         DOCKER_GID=$(stat -c '%g' ${DOCKER_SOCK})
         if [ "${DOCKER_GID}" != "0" ]; then
             if ! grep -qE "^[^:]+:[^:]+:${DOCKER_GID}:" /etc/group; then
-                # No group with such gid exists - create group docker
-                addgroup -g ${DOCKER_GID} docker
+                # No group with such gid exists - create group docker.
+                addgroup -g "${DOCKER_GID}" docker
                 adduser docker docker
             else
-                # Group with such gid exists - add user "docker" to this group
-                DOCKER_GROUP_NAME=`getent group "${DOCKER_GID}" | awk -F':' '{{ print $1 }}'`
-                adduser docker $DOCKER_GROUP_NAME
+                # Group with such gid exists - add user "docker" to this group.
+                DOCKER_GROUP_NAME=$(getent group "${DOCKER_GID}" | awk -F':' '{{ print $1 }}')
+                adduser docker "${DOCKER_GROUP_NAME}"
             fi
         else
-            # Docker socket belongs to "root" group - add user "docker" to this group
+            # Docker socket belongs to "root" group - add user "docker" to this group.
             adduser docker root
         fi
     fi
 }
 
 slugify() {
-    echo "$@" | iconv -t ascii | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
+    echo "${@}" | iconv -t ascii | sed -r s/[~^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr '[:upper:]' '[:lower:]'
 }
 
 make_image_cmd() {
-    DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
-    VOLUMES=$(echo ${1} | jq -r '.volumes | map(" -v " + .) | join("")')
-    PORTS=$(echo ${1} | jq -r '.ports | map(" -p " + .) | join("")')
-    EXPOSE=$(echo ${1} | jq -r '.expose | map(" --expose " + .) | join("")')
-    # We'll add name in, if it exists
-    NAME=$(echo ${1} | jq -r 'select(.name != null) | .name')
-    NETWORK=$(echo ${1} | jq -r 'select(.network != null) | .network')
-    ENVIRONMENT=$(echo ${1} | jq -r '.environment | map(" -e " + .) | join("")')
-    # echo ${1} | jq -r '.environment | join("\n")' > ${PWD}/${NAME}.env
-    # ENVIRONMENT=" --env-file ${PWD}/${NAME}.env"
+    DOCKERARGS=$(echo "${1}" | jq -r .dockerargs)
+    VOLUMES=$(echo "${1}" | jq -r '.volumes | map(" -v " + .) | join("")')
+    PORTS=$(echo "${1}" | jq -r '.ports | map(" -p " + .) | join("")')
+    EXPOSE=$(echo "${1}" | jq -r '.expose | map(" --expose " + .) | join("")')
+    NAME=$(echo "${1}" | jq -r 'select(.name != null) | .name')
+    NETWORK=$(echo "${1}" | jq -r 'select(.network != null) | .network')
+    ENVIRONMENT=$(echo "${1}" | jq -r '.environment | map(" -e " + .) | join("")')
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
-    if [ ! -z "${NAME}" ]; then DOCKERARGS="${DOCKERARGS} --rm --name ${NAME} "; fi
-    if [ ! -z "${NETWORK}" ]; then DOCKERARGS="${DOCKERARGS} --network ${NETWORK} "; fi
-    if [ ! -z "${VOLUMES}" ]; then DOCKERARGS="${DOCKERARGS}${VOLUMES}"; fi
-    if [ ! -z "${ENVIRONMENT}" ]; then DOCKERARGS="${DOCKERARGS}${ENVIRONMENT}"; fi
-    if [ ! -z "${PORTS}" ]; then DOCKERARGS="${DOCKERARGS}${PORTS}"; fi
-    if [ ! -z "${EXPOSE}" ]; then DOCKERARGS="${DOCKERARGS}${EXPOSE}"; fi
-    IMAGE=$(echo ${1} | jq -r .image | envsubst)
-    TMP_COMMAND=$(echo ${1} | jq -r .command)
+    if [ -n "${NAME}" ]; then DOCKERARGS="${DOCKERARGS} --rm --name ${NAME} "; fi
+    if [ -n "${NETWORK}" ]; then DOCKERARGS="${DOCKERARGS} --network ${NETWORK} "; fi
+    if [ -n "${VOLUMES}" ]; then DOCKERARGS="${DOCKERARGS}${VOLUMES}"; fi
+    if [ -n "${ENVIRONMENT}" ]; then DOCKERARGS="${DOCKERARGS}${ENVIRONMENT}"; fi
+    if [ -n "${PORTS}" ]; then DOCKERARGS="${DOCKERARGS}${PORTS}"; fi
+    if [ -n "${EXPOSE}" ]; then DOCKERARGS="${DOCKERARGS}${EXPOSE}"; fi
+    IMAGE=$(echo "${1}" | jq -r .image | envsubst)
+    TMP_COMMAND=$(echo "${1}" | jq -r .command)
     echo "docker run ${DOCKERARGS} ${IMAGE} ${TMP_COMMAND}"
 }
 
 make_container_cmd() {
-    DOCKERARGS=$(echo ${1} | jq -r .dockerargs)
+    DOCKERARGS=$(echo "${1}" | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
-    SCRIPT_NAME=$(echo ${1} | jq -r .name)
-    SCRIPT_NAME=$(slugify $SCRIPT_NAME)
-    PROJECT=$(echo ${1} | jq -r .project)
-    CONTAINER=$(echo ${1} | jq -r .container | envsubst)
-    TMP_COMMAND=$(echo ${1} | jq -r .command)
+    SCRIPT_NAME=$(echo "${1}" | jq -r .name)
+    SCRIPT_NAME=$(slugify "${SCRIPT_NAME}")
+    PROJECT=$(echo "${1}" | jq -r .project)
+    CONTAINER=$(echo "${1}" | jq -r .container | envsubst)
+    TMP_COMMAND=$(echo "${1}" | jq -r .command)
 
     if [ "${PROJECT}" != "null" ]; then
-
-        # create bash script to detect all running containers
+        # Create bash script to detect all running containers.
         if [ "${SCRIPT_NAME}" == "null" ]; then
             SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
         fi
-cat << EOF > ${HOME_DIR}/projects/${SCRIPT_NAME}.sh
+cat << EOF > "${HOME_DIR}"/projects/"${SCRIPT_NAME}".sh
 #!/usr/bin/env bash
 set -e
 
@@ -106,7 +110,6 @@ for CONTAINER_NAME in \$CONTAINERS; do
 done
 EOF
         echo "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
-        # cat "/bin/bash ${HOME_DIR}/projects/${SCRIPT_NAME}.sh"
     else
         echo "docker exec ${DOCKERARGS} ${CONTAINER} ${TMP_COMMAND}"
     fi
@@ -119,14 +122,14 @@ EOF
 #}
 
 make_cmd() {
-    if [ "$(echo ${1} | jq -r .image)" != "null" ]; then
-        make_image_cmd "$1"
-    elif [ "$(echo ${1} | jq -r .container)" != "null" ]; then
-        make_container_cmd "$1"
+    if [ "$(echo "${1}" | jq -r .image)" != "null" ]; then
+        make_image_cmd "${1}"
+    elif [ "$(echo "${1}" | jq -r .container)" != "null" ]; then
+        make_container_cmd "${1}"
     #elif [ "$(echo ${1} | jq -r .host)" != "null" ]; then
-    #   make_host_cmd "$1"
+    #   make_host_cmd "${1}"
     else
-        echo ${1} | jq -r .command
+        echo "${1}" | jq -r .command
     fi
 }
 
@@ -157,18 +160,18 @@ parse_schedule() {
             TIME=$2
             TOTAL=0
 
-            M=$(echo $TIME | grep -o '[0-9]\+m')
-            H=$(echo $TIME | grep -o '[0-9]\+h')
-            D=$(echo $TIME | grep -o '[0-9]\+d')
+            M=$(echo "${TIME}" | grep -o '[0-9]\+m')
+            H=$(echo "${TIME}" | grep -o '[0-9]\+h')
+            D=$(echo "${TIME}" | grep -o '[0-9]\+d')
 
             if [ -n "${M}" ]; then
-                TOTAL=$(($TOTAL + ${M::-1}))
+                TOTAL=$((TOTAL + ${M::-1}))
             fi
             if [ -n "${H}" ]; then
-                TOTAL=$(($TOTAL + ${H::-1} * 60))
+                TOTAL=$((TOTAL + ${H::-1} * 60))
             fi
             if [ -n "${D}" ]; then
-                TOTAL=$(($TOTAL + ${D::-1} * 60 * 24))
+                TOTAL=$((TOTAL + ${D::-1} * 60 * 24))
             fi
 
             echo "*/${TOTAL} * * * *"
@@ -180,73 +183,64 @@ parse_schedule() {
 }
 
 function build_crontab() {
-        
     rm -rf ${CRONTAB_FILE}
 
     ONSTART=()
-    while read i ; do
+    while read -r i ; do
 
-        SCHEDULE=$(jq -r .[$i].schedule ${CONFIG} | sed 's/\*/\\*/g')
+        SCHEDULE=$(jq -r .["$i"].schedule "${CONFIG}" | sed 's/\*/\\*/g')
         if [ "${SCHEDULE}" == "null" ]; then
-            echo "Schedule Missing: $(jq -r .[$i].schedule ${CONFIG})"
+            echo "Schedule Missing: $(jq -r .["$i"].schedule "${CONFIG}")"
             continue
         fi
-        SCHEDULE=$(parse_schedule ${SCHEDULE} | sed 's/\\//g')
+        SCHEDULE=$(parse_schedule "${SCHEDULE}" | sed 's/\\//g')
 
-        if [ "$(jq -r .[$i].command ${CONFIG})" == "null" ]; then
-            echo "Command Missing: $(jq -r .[$i].command ${CONFIG})"
+        COMMAND=$(jq -r .["$i"].command "${CONFIG}")
+        if [ "${COMMAND}" == "null" ]; then
+            echo "Command Missing: '${COMMAND}'"
             continue
         fi
 
-        COMMENT=$(jq -r .[$i].comment ${CONFIG})
+        COMMENT=$(jq -r .["$i"].comment "${CONFIG}")
         if [ "${COMMENT}" != "null" ]; then
             echo "# ${COMMENT}" >> ${CRONTAB_FILE}
         fi
 
-        SCRIPT_NAME=$(jq -r .[$i].name ${CONFIG})
-        SCRIPT_NAME=$(slugify $SCRIPT_NAME)
+        SCRIPT_NAME=$(jq -r .["$i"].name "${CONFIG}")
+        SCRIPT_NAME=$(slugify "${SCRIPT_NAME}")
         if [ "${SCRIPT_NAME}" == "null" ]; then
             SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
         fi
 
         COMMAND="/bin/bash ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh"
-cat << EOF > ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
+cat << EOF > "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 #!/usr/bin/env bash
 set -e
 
-# TODO find workaround
-# [error] write /dev/stdout: broken pipe <- when using docker commands
-#UUID=\$(cat /proc/sys/kernel/random/uuid)
-#exec > >(read message; echo "\${UUID} \$(date -Iseconds) [info] \$message" | tee -a ${LOG_FILE} )
-#exec 2> >(read message; echo "\${UUID} \$(date -Iseconds) [error] \$message" | tee -a ${LOG_FILE} >&2)
-
 echo "Start Cronjob **${SCRIPT_NAME}** ${COMMENT}"
 
-$(make_cmd "$(jq -c .[$i] ${CONFIG})")
+$(make_cmd "$(jq -c .["$i"] "${CONFIG}")")
 EOF
-
-
-
-        if [ "$(jq -r .[$i].trigger ${CONFIG})" != "null" ]; then
-            while read j ; do
-                if [ "$(jq .[$i].trigger[$j].command ${CONFIG})" == "null" ]; then
-                    echo "Command Missing: $(jq -r .[$i].trigger[$j].command ${CONFIG})"
+        TRIGGER=$(jq -r .["$i"].trigger "${CONFIG}")
+        if [ "${TRIGGER}" != "null" ]; then
+            while read -r j ; do
+                TRIGGER_COMMAND=$(jq .["$i"].trigger["$j"].command "${CONFIG}")
+                if [ "${TRIGGER_COMMAND}" == "null" ]; then
+                    echo "Command Missing: '${TRIGGER_COMMAND}'"
                     continue
                 fi
-                #TRIGGER_COMMAND=$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")
-                echo "$(make_cmd "$(jq -c .[$i].trigger[$j] ${CONFIG})")" >> ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
-                #COMMAND="${COMMAND} && ${TRIGGER_COMMAND}"
-            done < <(jq -r '.['$i'].trigger|keys[]' ${CONFIG})
+                make_cmd "${TRIGGER_COMMAND}" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
+            done < <(jq -r '.['"$i"'].trigger|keys[]' "${CONFIG}")
         fi
 
-        echo "echo \"End Cronjob **${SCRIPT_NAME}** ${COMMENT}\"" >> ${HOME_DIR}/jobs/${SCRIPT_NAME}.sh
+        echo "echo \"End Cronjob **${SCRIPT_NAME}** ${COMMENT}\"" >> "${HOME_DIR}"/jobs/"${SCRIPT_NAME}".sh
 
         echo "${SCHEDULE} ${COMMAND}" >> ${CRONTAB_FILE}
 
-        if [ "$(jq -r .[$i].onstart ${CONFIG})" == "true" ]; then
+        if [ "$(jq -r .["$i"].onstart "${CONFIG}")" == "true" ]; then
             ONSTART+=("${COMMAND}")
         fi
-    done < <(jq -r '.|keys[]' ${CONFIG})
+    done < <(jq -r '.|keys[]' "${CONFIG}")
 
     echo "##### crontab generation complete #####"
     cat ${CRONTAB_FILE}
@@ -258,27 +252,19 @@ EOF
     done
 }
 
-
-ensure_docker_socket_accessible
-
 start_app() {
-    get_config
-    if [ -f "${HOME_DIR}/config.working.json" ]; then
-        export CONFIG=${HOME_DIR}/config.working.json
-    elif [ -f "${HOME_DIR}/config.json" ]; then
-         export CONFIG=${HOME_DIR}/config.json
-    else
-        echo "NO CONFIG FILE FOUND"
+    normalize_config
+    export CONFIG=${HOME_DIR}/config.working.json
+    if [ ! -f "${CONFIG}" ]; then
+        echo "Unable to find ${CONFIG}."
+        exit 1
     fi
-    if [ "$1" = "crond" ]; then
-        if [ -f ${CONFIG} ]; then
-            build_crontab
-        else
-            echo "Unable to find ${CONFIG}"
-        fi
+    if [ "${1}" == "crond" ]; then
+        build_crontab
     fi
-    echo "$@"
-    exec "$@"
+    echo "${@}"
+    exec "${@}"
 }
 
-start_app "$@"
+ensure_docker_socket_accessible
+start_app "${@}"

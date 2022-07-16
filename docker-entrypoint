@@ -16,15 +16,17 @@ if [ "${LOG_FILE}" == "" ]; then
 fi
 
 get_config() {
+    JSON_CONFIG={}
     if [ -f "${HOME_DIR}/config.json" ]; then
-        jq 'map(.)' "${HOME_DIR}"/config.json > "${HOME_DIR}"/config.working.json
+        JSON_CONFIG="$(cat "${HOME_DIR}"/config.json)"
     elif [ -f "${HOME_DIR}/config.toml" ]; then
-        rq -t <<< "$(cat "${HOME_DIR}"/config.toml)" | jq 'map(.)' > "${HOME_DIR}"/config.json
+        JSON_CONFIG="$(rq -t <<< "$(cat "${HOME_DIR}"/config.toml)")"
     elif [ -f "${HOME_DIR}/config.yml" ]; then
-        rq -y <<< "$(cat "${HOME_DIR}"/config.yml)" | jq 'map(.)' > "${HOME_DIR}"/config.json
+        JSON_CONFIG="$(rq -y <<< "$(cat "${HOME_DIR}"/config.yml)")"
     elif [ -f "${HOME_DIR}/config.yaml" ]; then
-        rq -y <<< "$(cat "${HOME_DIR}"/config.yaml)" | jq 'map(.)' > "${HOME_DIR}"/config.json
+        JSON_CONFIG="$(rq -y <<< "$(cat "${HOME_DIR}"/config.yaml)")"
     fi
+    jq 'map(.)' "${JSON_CONFIG}" > "${HOME_DIR}"/config.working.json
 }
 
 DOCKER_SOCK=/var/run/docker.sock
@@ -263,19 +265,13 @@ ensure_docker_socket_accessible
 
 start_app() {
     get_config
-    if [ -f "${HOME_DIR}/config.working.json" ]; then
-        export CONFIG=${HOME_DIR}/config.working.json
-    elif [ -f "${HOME_DIR}/config.json" ]; then
-         export CONFIG=${HOME_DIR}/config.json
-    else
-        echo "NO CONFIG FILE FOUND"
+    export CONFIG=${HOME_DIR}/config.working.json
+    if [ ! -f "${CONFIG}" ]; then
+        echo "Unable to find ${CONFIG}."
+        exit 1
     fi
-    if [ "$1" = "crond" ]; then
-        if [ -f "${CONFIG}" ]; then
-            build_crontab
-        else
-            echo "Unable to find ${CONFIG}"
-        fi
+    if [ "$1" == "crond" ]; then
+        build_crontab
     fi
     echo "$@"
     exec "$@"

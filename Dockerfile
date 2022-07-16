@@ -1,4 +1,4 @@
-FROM alpine:3.12 as rq-build
+FROM alpine:3.16 as rq-build
 
 ENV RQ_VERSION=1.0.2
 WORKDIR /root/

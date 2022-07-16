@@ -7,6 +7,11 @@ CRONTAB_FILE=/etc/crontabs/docker
 # For local testing only.
 #HOME_DIR=.
 
+if [ -z "${HOME_DIR}" ]; then
+    echo "HOME_DIR not set."
+    exit 1
+fi
+
 # Ensure dir exist - in case of volume mapping.
 mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
 

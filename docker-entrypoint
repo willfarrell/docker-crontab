@@ -15,7 +15,7 @@ fi
 # Ensure dir exist - in case of volume mapping.
 mkdir -p "${HOME_DIR}"/jobs "${HOME_DIR}"/projects
 
-if [ -z "$DOCKER_HOST" ] && [ -a "$DOCKER_PORT_2375_TCP" ]; then
+if [ -z "${DOCKER_HOST}" ] && [ -a "${DOCKER_PORT_2375_TCP}" ]; then
 	export DOCKER_HOST='tcp://docker:2375'
 fi
 
@@ -53,7 +53,7 @@ ensure_docker_socket_accessible() {
             else
                 # Group with such gid exists - add user "docker" to this group.
                 DOCKER_GROUP_NAME=$(getent group "${DOCKER_GID}" | awk -F':' '{{ print $1 }}')
-                adduser docker "$DOCKER_GROUP_NAME"
+                adduser docker "${DOCKER_GROUP_NAME}"
             fi
         else
             # Docker socket belongs to "root" group - add user "docker" to this group.
@@ -63,7 +63,7 @@ ensure_docker_socket_accessible() {
 }
 
 slugify() {
-    echo "$@" | iconv -t ascii | sed -r s/[~^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr '[:upper:]' '[:lower:]'
+    echo "${@}" | iconv -t ascii | sed -r s/[~^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr '[:upper:]' '[:lower:]'
 }
 
 make_image_cmd() {
@@ -90,7 +90,7 @@ make_container_cmd() {
     DOCKERARGS=$(echo "${1}" | jq -r .dockerargs)
     if [ "${DOCKERARGS}" == "null" ]; then DOCKERARGS=; fi
     SCRIPT_NAME=$(echo "${1}" | jq -r .name)
-    SCRIPT_NAME=$(slugify "$SCRIPT_NAME")
+    SCRIPT_NAME=$(slugify "${SCRIPT_NAME}")
     PROJECT=$(echo "${1}" | jq -r .project)
     CONTAINER=$(echo "${1}" | jq -r .container | envsubst)
     TMP_COMMAND=$(echo "${1}" | jq -r .command)
@@ -123,11 +123,11 @@ EOF
 
 make_cmd() {
     if [ "$(echo "${1}" | jq -r .image)" != "null" ]; then
-        make_image_cmd "$1"
+        make_image_cmd "${1}"
     elif [ "$(echo "${1}" | jq -r .container)" != "null" ]; then
-        make_container_cmd "$1"
+        make_container_cmd "${1}"
     #elif [ "$(echo ${1} | jq -r .host)" != "null" ]; then
-    #   make_host_cmd "$1"
+    #   make_host_cmd "${1}"
     else
         echo "${1}" | jq -r .command
     fi
@@ -160,9 +160,9 @@ parse_schedule() {
             TIME=$2
             TOTAL=0
 
-            M=$(echo "$TIME" | grep -o '[0-9]\+m')
-            H=$(echo "$TIME" | grep -o '[0-9]\+h')
-            D=$(echo "$TIME" | grep -o '[0-9]\+d')
+            M=$(echo "${TIME}" | grep -o '[0-9]\+m')
+            H=$(echo "${TIME}" | grep -o '[0-9]\+h')
+            D=$(echo "${TIME}" | grep -o '[0-9]\+d')
 
             if [ -n "${M}" ]; then
                 TOTAL=$((TOTAL + ${M::-1}))
@@ -206,7 +206,7 @@ function build_crontab() {
         fi
 
         SCRIPT_NAME=$(jq -r .["$i"].name "${CONFIG}")
-        SCRIPT_NAME=$(slugify "$SCRIPT_NAME")
+        SCRIPT_NAME=$(slugify "${SCRIPT_NAME}")
         if [ "${SCRIPT_NAME}" == "null" ]; then
             SCRIPT_NAME=$(cat /proc/sys/kernel/random/uuid)
         fi
@@ -256,12 +256,12 @@ start_app() {
         echo "Unable to find ${CONFIG}."
         exit 1
     fi
-    if [ "$1" == "crond" ]; then
+    if [ "${1}" == "crond" ]; then
         build_crontab
     fi
-    echo "$@"
-    exec "$@"
+    echo "${@}"
+    exec "${@}"
 }
 
 ensure_docker_socket_accessible
-start_app "$@"
+start_app "${@}"

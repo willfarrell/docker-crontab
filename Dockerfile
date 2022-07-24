@@ -18,7 +18,7 @@ RUN apk add --no-cache --virtual .run-deps gettext jq bash tini \
     && apk add curl \
     && apk add bind-tools \
     && mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects \
-    && adduser -S docker -D
+    && adduser -S docker -D \
     && apk add -U tzdata \
     && cp /usr/share/zoneinfo/${TZ} /etc/localtime \
 

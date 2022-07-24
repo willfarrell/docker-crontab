@@ -20,7 +20,7 @@ RUN apk add --no-cache --virtual .run-deps gettext jq bash tini \
     && mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects \
     && adduser -S docker -D \
     && apk add -U tzdata \
-    && cp /usr/share/zoneinfo/${TZ} /etc/localtime \
+    && cp -r -f /usr/share/zoneinfo/${TZ} /etc/localtime
 
 
 COPY docker-entrypoint /

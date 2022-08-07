@@ -1,14 +1,6 @@
 # docker-crontab
 
-A simple wrapper over `docker` to all complex cron job to be run in other containers.
-
-## Supported tags and Dockerfile links
-
--	[`latest` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/master/Dockerfile)
--	[`1.0.0` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/1.0.0/Dockerfile)
--	[`0.6.0` (*Dockerfile*)](https://github.com/willfarrell/docker-crontab/blob/0.6.0/Dockerfile)
-
-![](https://img.shields.io/docker/pulls/willfarrell/crontab "Total docker pulls") [![](https://images.microbadger.com/badges/image/willfarrell/crontab.svg)](http://microbadger.com/images/willfarrell/crontab "Get your own image badge on microbadger.com")
+A simple wrapper over `docker` to all complex cron job to be run in other containers. Note, this is a maintained fork of [willfarrell/docker-crontab](https://github.com/willfarrell/docker-crontab).
 
 ## Why?
 Yes, I'm aware of [mcuadros/ofelia](https://github.com/mcuadros/ofelia) (>250MB when this was created), it was the main inspiration for this project. 
@@ -23,7 +15,6 @@ A great project, don't get me wrong. It was just missing certain key enterprise 
 - Ability to trigger scripts in other containers on completion cron job using `trigger`.
 
 ## Config file
-
 The config file can be specifed in any of `json`, `toml`, or `yaml`, and can be defined as either an array or mapping (top-level keys will be ignored; can be useful for organizing commands)
 
 - `name`: Human readable name that will be used as the job filename. Will be converted into a slug. Optional.
@@ -61,7 +52,6 @@ See [`config-samples`](config-samples) for examples.
 ## How to use
 
 ### Command Line
-
 ```bash
 docker build -t crontab .
 docker run -d \
@@ -73,7 +63,6 @@ docker run -d \
 ```
 
 ### Use with docker-compose
-
 1. Figure out which network name used for your docker-compose containers
 	* use `docker network ls` to see existing networks
 	* if your `docker-compose.yml` is in `my_dir` directory, you probably has network `my_dir_default`
@@ -82,38 +71,3 @@ docker run -d \
 	* use `--network NETWORK_NAME` to connect new container into docker-compose network
 	* use `--rm --name NAME` to use named container
 	* e.g. `"dockerargs": "--network my_dir_default --rm --name my-best-cron-job"`
-
-### Dockerfile
-
-```Dockerfile
-FROM willfarrell/crontab
-
-COPY config.json ${HOME_DIR}/
-
-```
-
-### Logrotate Dockerfile
-
-```Dockerfile
-FROM willfarrell/crontab
-
-RUN apk add --no-cache logrotate
-RUN echo "*/5 *	* * *  /usr/sbin/logrotate /etc/logrotate.conf" >> /etc/crontabs/logrotate
-COPY logrotate.conf /etc/logrotate.conf
-
-CMD ["crond", "-f"]
-```
-
-### Logging - In Dev
-
-All `stdout` is captured, formatted, and saved to `/var/log/crontab/jobs.log`. Set `LOG_FILE` to `/dev/null` to disable logging.
-
-example: `e6ced859-1563-493b-b1b1-5a190b29e938 2017-06-18T01:27:10+0000 [info] Start Cronjob **map-a-vol** map a volume`
-
-grok: `CRONTABLOG %{DATA:request_id} %{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:severity}\] %{GREEDYDATA:message}`
-
-## TODO
-- [ ] Have ability to auto regenerate crontab on file change (signal HUP?)
-- [ ] Run commands on host machine (w/ --privileged?)
-- [ ] Write tests
-- [ ] Setup TravisCI

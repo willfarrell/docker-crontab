@@ -1,11 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
 set -e
 
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
-
-# For local testing only.
-#HOME_DIR=.
 
 if [ -z "${HOME_DIR}" ]; then
     echo "HOME_DIR not set."
@@ -114,19 +112,11 @@ EOF
     fi
 }
 
-#make_host_cmd() {
-#   HOST_BINARY=$(echo ${1} | jq -r .host)
-#   TMP_COMMAND=$(echo ${1} | jq -r .command)
-#   echo "${HOST_BINARY} ${TMP_COMMAND}"
-#}
-
 make_cmd() {
     if [ "$(echo "${1}" | jq -r .image)" != "null" ]; then
         make_image_cmd "${1}"
     elif [ "$(echo "${1}" | jq -r .container)" != "null" ]; then
         make_container_cmd "${1}"
-    #elif [ "$(echo ${1} | jq -r .host)" != "null" ]; then
-    #   make_host_cmd "${1}"
     else
         echo "${1}" | jq -r .command
     fi
@@ -257,7 +247,7 @@ start_app() {
     normalize_config
     export CONFIG=${HOME_DIR}/config.working.json
     if [ ! -f "${CONFIG}" ]; then
-        echo "generated ${CONFIG} missing."
+        echo "generated ${CONFIG} missing. exiting."
         exit 1
     fi
     if [ "${1}" == "crond" ]; then
@@ -268,4 +258,5 @@ start_app() {
 }
 
 ensure_docker_socket_accessible
+printf "✨ starting crontab container ✨\n"
 start_app "${@}"

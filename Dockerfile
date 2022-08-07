@@ -1,24 +1,36 @@
-FROM alpine:3.16 as rq-build
+FROM alpine:latest as rq-build
 
 ENV RQ_VERSION=1.0.2
-WORKDIR /root/
+WORKDIR /usr/bin/rq/
 
-RUN apk --update add upx \
-    && wget https://github.com/dflemstr/rq/releases/download/v${RQ_VERSION}/rq-v${RQ_VERSION}-x86_64-unknown-linux-musl.tar.gz \
-    && tar -xvf rq-v1.0.2-x86_64-unknown-linux-musl.tar.gz \
-    && upx --brute rq
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        upx && \
+    wget https://github.com/dflemstr/rq/releases/download/v${RQ_VERSION}/rq-v${RQ_VERSION}-x86_64-unknown-linux-musl.tar.gz && \
+    tar -xvf rq-v${RQ_VERSION}-x86_64-unknown-linux-musl.tar.gz && \
+    upx --brute rq
 
-FROM library/docker:stable
-
-COPY --from=rq-build /root/rq /usr/local/bin
+FROM docker:latest as release
 
 ENV HOME_DIR=/opt/crontab
-RUN apk add --no-cache --virtual .run-deps gettext jq bash tini \
-    && mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects \
-    && adduser -S docker -D
 
-COPY docker-entrypoint /
-ENTRYPOINT ["/sbin/tini", "--", "/docker-entrypoint"]
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        bash \
+        curl \
+        gettext \
+        jq \
+        tini \
+        wget && \
+    mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects && \
+    adduser -S docker -D
+
+COPY --from=rq-build /usr/bin/rq/rq /usr/local/bin
+COPY entrypoint.sh /
+
+ENTRYPOINT ["/sbin/tini", "--", "/entrypoint.sh"]
 
 HEALTHCHECK --interval=5s --timeout=3s \
     CMD ps aux | grep '[c]rond' || exit 1

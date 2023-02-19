@@ -24,7 +24,8 @@ RUN apk update && \
         jq \
         tini \
         wget && \
-    mkdir -p ${HOME_DIR}/jobs ${HOME_DIR}/projects && \
+    mkdir -p ${HOME_DIR}/jobs && \
+    rm -rf /etc/periodic /etc/crontabs/root && \
     adduser -S docker -D
 
 COPY --from=rq-build /usr/bin/rq/rq /usr/local/bin

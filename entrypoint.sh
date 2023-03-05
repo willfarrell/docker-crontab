@@ -4,8 +4,13 @@ set -e
 
 DOCKER_SOCK=/var/run/docker.sock
 CRONTAB_FILE=/etc/crontabs/docker
+LOG_DIR=/var/log/crontab
 
-if [ -z "${HOME_DIR}" ]; then
+if [ -z "${HOME_DIR}" ] && [ -n "${TEST_MODE}" ]; then
+    HOME_DIR=/tmp/crontab-docker-testing
+    CRONTAB_FILE=${HOME_DIR}/test
+    LOG_DIR=${HOME_DIR}/crontab
+elif [ -z "${HOME_DIR}" ]; then
     echo "HOME_DIR not set."
     exit 1
 fi
@@ -18,10 +23,9 @@ if [ -z "${DOCKER_HOST}" ] && [ -a "${DOCKER_PORT_2375_TCP}" ]; then
 fi
 
 if [ "${LOG_FILE}" == "" ]; then
-    LOG_DIR=/var/log/crontab
     LOG_FILE=${LOG_DIR}/jobs.log
-    mkdir -p ${LOG_DIR}
-    touch ${LOG_FILE}
+    mkdir -p "${LOG_DIR}"
+    touch "${LOG_FILE}"
 fi
 
 normalize_config() {
@@ -115,10 +119,7 @@ make_cmd() {
 
 parse_schedule() {
     case $1 in
-        "@yearly")
-            echo "0 0 1 1 *"
-            ;;
-        "@annually")
+        "@yearly"|"@annually")
             echo "0 0 1 1 *"
             ;;
         "@monthly")
@@ -156,6 +157,28 @@ parse_schedule() {
 
             echo "*/${TOTAL} * * * *"
             ;;
+        "@random")
+            for when in "$@"
+            do
+                if [ "$when" == "@random" ]; then
+                    continue
+                fi
+                M H D="*"
+                case $when in
+                    "@m")
+                        M=$(shuf -i 0-6 -n 1)
+                        ;;
+                    "@h")
+                        H=$(shuf -i 0-23 -n 1)
+                        ;;
+                    "@d")
+                        D=$(shuf -i 0-6 -n 1)
+                        ;;
+                esac
+            done
+
+            echo "${M} ${H} * * ${D}"
+            ;;
         *)
             echo "${@}"
             ;;
@@ -163,7 +186,7 @@ parse_schedule() {
 }
 
 function build_crontab() {
-    rm -rf ${CRONTAB_FILE}
+    rm -rf "${CRONTAB_FILE}"
 
     ONSTART=()
     while read -r i ; do
@@ -203,7 +226,7 @@ function build_crontab() {
             echo ""
             echo "echo \"start cron job __${SCRIPT_NAME}__\""
             echo "${CRON_COMMAND}"
-        }  >> "${SCRIPT_PATH}"
+        }  > "${SCRIPT_PATH}"
 
         TRIGGER=$(echo "${KEY}" | jq -r '.trigger')
         if [ "${TRIGGER}" != "null" ]; then
@@ -222,9 +245,9 @@ function build_crontab() {
         echo "echo \"end cron job __${SCRIPT_NAME}__\"" >> "${SCRIPT_PATH}"
 
         if [ "${COMMENT}" != "null" ]; then
-            echo "# ${COMMENT}" >> ${CRONTAB_FILE}
+            echo "# ${COMMENT}" >> "${CRONTAB_FILE}"
         fi
-        echo "${SCHEDULE} ${SCRIPT_PATH}" >> ${CRONTAB_FILE}
+        echo "${SCHEDULE} ${SCRIPT_PATH}" >> "${CRONTAB_FILE}"
 
         ONSTART_COMMAND=$(echo "${KEY}" | jq -r '.onstart')
         if [ "${ONSTART_COMMAND}" == "true" ]; then
@@ -233,7 +256,7 @@ function build_crontab() {
     done < <(jq -r '. | keys[]' "${CONFIG}")
 
     printf "##### crontab generated #####\n"
-    cat ${CRONTAB_FILE}
+    cat "${CRONTAB_FILE}"
 
     printf "##### run commands with onstart #####\n"
     for ONSTART_COMMAND in "${ONSTART[@]}"; do
@@ -258,6 +281,8 @@ start_app() {
     exec "${@}"
 }
 
-ensure_docker_socket_accessible
+if [ -z "${TEST_MODE}" ]; then
+    ensure_docker_socket_accessible
+fi
 printf "✨ starting crontab container ✨\n"
 start_app "${@}"

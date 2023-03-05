@@ -118,8 +118,11 @@ make_cmd() {
 }
 
 parse_schedule() {
-    case $1 in
-        "@yearly"|"@annually")
+    IFS=" "
+    read -a params <<< "$@"
+
+    case ${params[0]} in
+        "@yearly" | "@annually")
             echo "0 0 1 1 *"
             ;;
         "@monthly")
@@ -137,36 +140,16 @@ parse_schedule() {
         "@hourly")
             echo "0 * * * *"
             ;;
-        "@every")
-            TIME=$2
-            TOTAL=0
-
-            M=$(echo "${TIME}" | grep -o '[0-9]\+m')
-            H=$(echo "${TIME}" | grep -o '[0-9]\+h')
-            D=$(echo "${TIME}" | grep -o '[0-9]\+d')
-
-            if [ -n "${M}" ]; then
-                TOTAL=$((TOTAL + ${M::-1}))
-            fi
-            if [ -n "${H}" ]; then
-                TOTAL=$((TOTAL + ${H::-1} * 60))
-            fi
-            if [ -n "${D}" ]; then
-                TOTAL=$((TOTAL + ${D::-1} * 60 * 24))
-            fi
-
-            echo "*/${TOTAL} * * * *"
-            ;;
         "@random")
-            for when in "$@"
+            M="*"
+            H="*"
+            D="*"
+
+            for when in "${params[@]:1}"
             do
-                if [ "$when" == "@random" ]; then
-                    continue
-                fi
-                M H D="*"
                 case $when in
                     "@m")
-                        M=$(shuf -i 0-6 -n 1)
+                        M=$(shuf -i 0-59 -n 1)
                         ;;
                     "@h")
                         H=$(shuf -i 0-23 -n 1)
@@ -180,7 +163,7 @@ parse_schedule() {
             echo "${M} ${H} * * ${D}"
             ;;
         *)
-            echo "${@}"
+            echo "${params[@]}"
             ;;
     esac
 }

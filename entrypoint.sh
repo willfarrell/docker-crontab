@@ -73,7 +73,7 @@ make_image_cmd() {
     ENVIRONMENT=$(echo "${1}" | jq -r 'select(.environment != null) | .environment | map("--env " + .) | join(" ")')
     EXPOSE=$(echo "${1}" | jq -r 'select(.expose != null) | .expose | map("--expose " + .) | join(" ")' )
     NAME=$(echo "${1}" | jq -r 'select(.name != null) | .name')
-    NETWORK=$(echo "${1}" | jq -r 'select(.network != null) | .network | map("--network " + .) | join(" ")')
+    NETWORKS=$(echo "${1}" | jq -r 'select(.networks != null) | .networks | map("--network " + .) | join(" ")')
     PORTS=$(echo "${1}" | jq -r 'select(.ports != null) | .ports | map("--publish " + .) | join(" ")')
     VOLUMES=$(echo "${1}" | jq -r 'select(.volumes != null) | .volumes | map("--volume " + .) | join(" ")')
 
@@ -82,7 +82,7 @@ make_image_cmd() {
     if [ -n "${ENVIRONMENT}" ]; then DOCKERARGS+="${ENVIRONMENT} "; fi
     if [ -n "${EXPOSE}" ]; then DOCKERARGS+="${EXPOSE} "; fi
     if [ -n "${NAME}" ]; then DOCKERARGS+="--name ${NAME} "; fi
-    if [ -n "${NETWORK}" ]; then DOCKERARGS+="${NETWORK} "; fi
+    if [ -n "${NETWORKS}" ]; then DOCKERARGS+="${NETWORKS} "; fi
     if [ -n "${PORTS}" ]; then DOCKERARGS+="${PORTS} "; fi
     if [ -n "${VOLUMES}" ]; then DOCKERARGS+="${VOLUMES} "; fi
 

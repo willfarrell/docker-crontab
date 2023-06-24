@@ -13,8 +13,8 @@ ENV RQ_VERSION=1.0.2
 WORKDIR /usr/bin/rq/
 
 #hadolint ignore=DL3018
-RUN apk update --quiet --no-cache && \
-    apk upgrade --quiet --no-cache && \
+RUN apk update --quiet && \
+    apk upgrade --quiet && \
     apk add --quiet --no-cache \
         upx && \
     rm /var/cache/apk/* && \
@@ -36,8 +36,8 @@ LABEL org.opencontainers.image.title="crontab" \
 ENV HOME_DIR=/opt/crontab
 
 #hadolint ignore=DL3018
-RUN apk update --quiet --no-cache && \
-    apk upgrade --quiet --no-cache && \
+RUN apk update --quiet && \
+    apk upgrade --quiet && \
     apk add --quiet --no-cache \
         bash \
         coreutils \

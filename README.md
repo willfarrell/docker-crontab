@@ -1,6 +1,6 @@
 # crontab
 
-![crontab](https://github.com/SimplicityGuy/adocker-crontab/actions/workflows/build.yml/badge.svg) ![License: MIT](https://img.shields.io/github/license/SimplicityGuy/docker-crontab) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+![crontab](https://github.com/SimplicityGuy/docker-crontab/actions/workflows/build.yml/badge.svg) ![License: MIT](https://img.shields.io/github/license/SimplicityGuy/docker-crontab) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 A simple wrapper over `docker` to all complex cron job to be run in other containers.
 

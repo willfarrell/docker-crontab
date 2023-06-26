@@ -18,6 +18,7 @@ jobs:
 
     steps:
       - name: Delete Docker images older than a month.
+        id: cleanup-images
         uses: snok/container-retention-policy@v2
         with:
           account-type: personal

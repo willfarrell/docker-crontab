@@ -47,4 +47,3 @@ onstart = true
 command = "sh -c '/etc/scripts/make_hpkp ${NGINX_DOMAIN} && /usr/sbin/nginx -t && /usr/sbin/nginx -s reload'"
 project = "conduit"
 container = "nginx"
-

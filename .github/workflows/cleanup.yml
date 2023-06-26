@@ -1,0 +1,39 @@
+---
+name: cleanup
+
+on:
+  schedule:
+    - cron: '0 0 15 * *'
+
+env:
+  IMAGE_NAME: ${{ github.actor }}/docker-crontab
+
+jobs:
+  cleanup-docker-crontab:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Delete Docker images older than a month.
+        id: cleanup-images
+        uses: snok/container-retention-policy@v2
+        with:
+          account-type: personal
+          cut-off: One month ago UTC
+          keep-at-least: 4
+          skip-tags: latest
+          image-names: ${{ env.IMAGE_NAME }}
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Send notification to Discord.
+        uses: sarisia/actions-status-discord@v1.12.0
+        if: always()
+        with:
+          title: ${{ env.IMAGE_NAME }}
+          description: |
+            succeded cleanup : ${{ steps.cleanup-images.outputs.deleted }}
+            failed cleanup   : ${{ steps.cleanup-images.outputs.failed }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}

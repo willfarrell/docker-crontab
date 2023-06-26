@@ -26,3 +26,13 @@ jobs:
           skip-tags: latest
           image-names: ${{ env.IMAGE_NAME }}
           token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Send notification to Discord.
+        uses: sarisia/actions-status-discord@v1.12.0
+        if: always()
+        with:
+          title: ${{ env.IMAGE_NAME }}
+          description: |
+            succeded cleanup : ${{ steps.cleanup-images.outputs.deleted }}
+            failed cleanup   : ${{ steps.cleanup-images.outputs.failed }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}

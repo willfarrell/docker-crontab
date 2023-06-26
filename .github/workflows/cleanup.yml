@@ -1,0 +1,28 @@
+---
+name: cleanup
+
+on:
+  schedule:
+    - cron: '0 0 15 * *'
+
+env:
+  IMAGE_NAME: ${{ github.actor }}/docker-crontab
+
+jobs:
+  cleanup-docker-crontab:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Delete Docker images older than a month.
+        uses: snok/container-retention-policy@v2
+        with:
+          account-type: personal
+          cut-off: One month ago UTC
+          keep-at-least: 4
+          skip-tags: latest
+          image-names: ${{ env.IMAGE_NAME }}
+          token: ${{ secrets.GHCR_TOKEN }}

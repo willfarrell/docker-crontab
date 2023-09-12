@@ -100,7 +100,7 @@ cat << EOF > ${HOME_DIR}/projects/${SCRIPT_NAME}.sh
 #!/usr/bin/env bash
 set -e
 
-CONTAINERS=\$(docker ps --format '{{.Names}}' | grep -E "^${PROJECT}_${CONTAINER}.[0-9]+")
+CONTAINERS=\$(docker ps --format '{{.Names}}' | grep -E "^${PROJECT}.${CONTAINER}.[0-9]+")
 for CONTAINER_NAME in \$CONTAINERS; do
     docker exec ${DOCKERARGS} \${CONTAINER_NAME} ${TMP_COMMAND}
 done
